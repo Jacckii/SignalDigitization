@@ -406,12 +406,12 @@ void PlotManager::TickOutputData(Signal& output)
         output.data_buffer_sampling.AddPoint(time, last_y_axis_value);
 
         //quantization
-        int number_of_positions = pow(2, quant_bit_depth);
-        float min_max_diff = abs(max_quant_value - min_quant_value);
+        int number_of_positions = (int)pow(2, quant_bit_depth);
+        float min_max_diff = (float)abs(max_quant_value - min_quant_value);
         if (number_of_positions != 0) {
             float qunat_step = min_max_diff / (float)number_of_positions;
             
-            float quantizied_value = FindClosestQuantValue(last_y_axis_value, qunat_step, number_of_positions, min_quant_value, max_quant_value);
+            float quantizied_value = FindClosestQuantValue(last_y_axis_value, qunat_step, number_of_positions, (float)min_quant_value, (float)max_quant_value);
             output.data_buffer_quantization.AddPoint(time, quantizied_value);
         };
     }
