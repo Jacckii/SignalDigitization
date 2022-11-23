@@ -78,7 +78,7 @@ int main(int argc, char* argv[]) {
                     {
                         ImGui::Text("Plot settings:");
                         plot_manager.TickData();
-
+                        plot_manager.RenderMainPlotSettings();
                     }
                     ImGui::EndChild();
 

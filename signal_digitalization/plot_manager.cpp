@@ -23,10 +23,14 @@ PlotManager::PlotManager()
 
 void PlotManager::TickData()
 {
+    if (paused)
+        return;
+
     time += ImGui::GetIO().DeltaTime;
 
     for (auto& iter : inputs) {
         TickInputData(iter);
+        TickOutputData(iter);
     }
 }
 
@@ -77,7 +81,7 @@ void PlotManager::RenderAddInputDialog()
             if (CheckIfInputNameExists(new_name))
                 new_name += std::string("#") + std::to_string(uid);
 
-            PlotManager::AnalogInput temp(
+            PlotManager::Signal temp(
                 std::string(new_name),
                 (PlotManager::function_names)item, 
                 std::string(math_expression), 
@@ -87,6 +91,17 @@ void PlotManager::RenderAddInputDialog()
             inputs.push_back(temp);
             uid++;
             sprintf(name, "Analog_%d\0", uid);
+
+            //generate new color using colormaps
+            ImPlot::BeginPlot("##DUMMY");
+            auto new_color = ImPlot::NextColormapColor();
+            ImPlot::EndPlot();
+
+            color[0] = new_color.x;
+            color[1] = new_color.y;
+            color[2] = new_color.z;
+            color[3] = new_color.w;
+
             ImGui::CloseCurrentPopup();
         }
         ImGui::PopStyleColor(3);
@@ -121,32 +136,68 @@ void PlotManager::RenderInputCards()
 
 void PlotManager::RenderMainPlot()
 {
+    auto old_plot_style = ImPlot::GetStyle();
+    ImPlot::GetStyle().MarkerSize = marker_size;
+
     auto plot_window_height = ImGui::GetCurrentWindow()->Size.y - (ImGui::GetStyle().ItemSpacing.y * 4.f);
     ImGui::BeginChild("Plot view", ImVec2(0.f, (plot_window_height * 0.65f) - (ImGui::GetStyle().ItemSpacing.y * 1.25f)), true);
-    if (ImPlot::BeginPlot("##Digital", ImVec2(-1.f, -1.f), ImPlotFlags_Equal)) {
-        ImPlot::SetupAxes(0, 0, 0, ImPlotAxisFlags_AutoFit);
+    if (ImPlot::BeginPlot("##Digital", ImVec2(-1.f, -1.f), auto_size ? ImPlotFlags_Equal : 0)) {
+        ImPlot::SetupAxes(0, 0, 0, auto_size ? ImPlotAxisFlags_AutoFit : 0);
         ImPlot::SetupAxisLimits(ImAxis_X1, time - 10.0, time, ImGuiCond_Always);
         for (auto& iter : inputs) {
-            if (iter.data_buffer.Data.size() > 0)
+            if (iter.data_buffer_analog.Data.size() > 0)
             {
                 ImPlot::PushStyleColor(ImPlotCol_Line, iter.plot_color);
-                ImPlot::PlotLine(iter.input_name.c_str(), &iter.data_buffer.Data[0].x, &iter.data_buffer.Data[0].y, iter.data_buffer.Data.size(), iter.data_buffer.Offset, 2 * sizeof(float));
+                ImPlot::PlotLine(iter.input_name.c_str(), &iter.data_buffer_analog.Data[0].x, &iter.data_buffer_analog.Data[0].y, iter.data_buffer_analog.Data.size(), iter.data_buffer_analog.Offset, 2 * sizeof(float));
                 ImPlot::PopStyleColor();
+                if (show_sampling) {
+                    ImPlot::PlotScatter((iter.input_name + std::string(" sample points")).c_str(), &iter.data_buffer_sampling.Data[0].x, &iter.data_buffer_sampling.Data[0].y, iter.data_buffer_sampling.Data.size(), iter.data_buffer_sampling.Offset, 2 * sizeof(float));
+                }
+                
             }
+        }
+        if (show_quant_limits) {
+            ImPlot::DragLineY(0, &min_quant_value, ImVec4(1, 1, 1, 1), 1, ImPlotDragToolFlags_NoFit);
+            ImPlot::TagY(min_quant_value, ImVec4(1, 1, 1, 1), "Min");
+
+            ImPlot::DragLineY(1, &max_quant_value, ImVec4(1, 1, 1, 1), 1, ImPlotDragToolFlags_NoFit);
+            ImPlot::TagY(max_quant_value, ImVec4(1, 1, 1, 1), "Max");
         }
         ImPlot::EndPlot();
     }
+
+    ImPlot::GetStyle() = old_plot_style;
 }
 
 void PlotManager::RenderDigitalizationOtions()
 {
     ImGui::NewLine();
-    //ToDo: Vzorkovací perioda, šíøka kvantizaèního intervalu, bitovou hloubku a/d pøevodníku
+    //ToDo: šíøka kvantizaèního intervalu, bitovou hloubku a/d pøevodníku
     //ToDo: Vykreslit digitalní signal obsahující šum
+    ImGui::Checkbox("Show sampling", &show_sampling);
     ImGui::Text("Sampling rate:");
     ImGui::PushItemWidth(-1.f);
-    ImGui::SliderInt("##SamplingRate", &sampling_rate, 1, 200);
+    ImGui::SliderFloat("##SamplingRate", &sampling_rate, 1.f, 20.f, "%.2f");
     ImGui::PopItemWidth();
+
+    ImGui::NewLine();
+    ImGui::Text("Quantization area:");
+    ImGui::InputDouble("Min", &min_quant_value, 0.01, 0.1);
+    ImGui::InputDouble("Max", &max_quant_value, 0.01, 0.1);
+    ImGui::Checkbox("Show quantization limits", &show_quant_limits);
+    ImGui::Text("Quantization bit depth:");
+    ImGui::PushItemWidth(-1.f);
+    ImGui::SliderInt("##QuantizationBitDepth", &quant_bit_depth, 2, 32);
+    
+    ImGui::PopItemWidth();
+}
+
+void PlotManager::RenderMainPlotSettings()
+{
+    ImGui::Checkbox("Pause!", &paused);
+    ImGui::SameLine();
+    ImGui::Checkbox("Auto size axes", &auto_size);
+    ImGui::SliderFloat("Sample point size", &marker_size, 2.f, 5.f, "%.2f");
 }
 
 void PlotManager::OpenEditInputDialog()
@@ -256,7 +307,7 @@ void PlotManager::RenderEditInputDialog()
     }
 }
 
-int PlotManager::RenderAnalogInputCard(AnalogInput& input)
+int PlotManager::RenderAnalogInputCard(Signal& input)
 {
     int ret = 0;
     constexpr float aspect_ratio = 9.f / 16.f;
@@ -268,13 +319,13 @@ int PlotManager::RenderAnalogInputCard(AnalogInput& input)
     {
         auto cursor_pos = ImGui::GetCursorPos();
 
-        if (input.data_buffer.Data.size() > 0) {
+        if (input.data_buffer_analog.Data.size() > 0) {
             ImPlot::PushStyleVar(ImPlotStyleVar_PlotPadding, ImVec2(0, 0));
             if (ImPlot::BeginPlot(std::string(input.input_name + "##CARDPLOT").c_str(), ImVec2(window_width, card_height), ImPlotFlags_CanvasOnly | ImPlotFlags_NoChild | ImPlotFlags_NoInputs)) {
                 ImPlot::SetupAxisLimits(ImAxis_X1, time - 10.0, time, ImGuiCond_Always);
                 ImPlot::SetupAxes(0, 0, ImPlotAxisFlags_NoDecorations, ImPlotAxisFlags_NoDecorations | ImPlotAxisFlags_AutoFit);
                 ImPlot::PushStyleColor(ImPlotCol_Line, input.plot_color);
-                ImPlot::PlotLine(std::string(input.input_name + "##CARDPLOTLINE").c_str(), &input.data_buffer.Data[0].x, &input.data_buffer.Data[0].y, input.data_buffer.Data.size(), input.data_buffer.Offset, 2 * sizeof(float));
+                ImPlot::PlotLine(std::string(input.input_name + "##CARDPLOTLINE").c_str(), &input.data_buffer_analog.Data[0].x, &input.data_buffer_analog.Data[0].y, input.data_buffer_analog.Data.size(), input.data_buffer_analog.Offset, 2 * sizeof(float));
                 ImPlot::PopStyleColor();
                 ImPlot::EndPlot();
             }
@@ -318,6 +369,36 @@ float PlotManager::GenerateGussianNoise()
     return dist(generator);
 }
 
+void PlotManager::TickOutputData(Signal& output)
+{
+    //sampling
+    auto sampling_rate_in_ms = 1.f / (float)sampling_rate;
+
+    if (output.last_sample_time + sampling_rate_in_ms < time) {
+        output.last_sample_time = time;
+
+        //get last valid analog value
+        float last_y_axis_value = 0.f;
+        if (output.data_buffer_analog.Offset == 0)
+            last_y_axis_value = output.data_buffer_analog.Data.back().y;
+        else {
+            auto data_index = (output.data_buffer_analog.Offset - 1) % output.data_buffer_analog.MaxSize;
+            last_y_axis_value = output.data_buffer_analog.Data[data_index].y;
+        }
+        output.data_buffer_sampling.Offset = output.data_buffer_analog.Offset;
+        output.data_buffer_sampling.AddPoint(time, last_y_axis_value);
+    }
+
+    //quantization
+    int number_of_positions = pow(2, quant_bit_depth);
+    float min_max_diff = abs(max_quant_value - min_quant_value);
+    if (number_of_positions != 0) {
+        float qunat_step = min_max_diff / (float)number_of_positions;
+
+
+    }
+}
+
 bool PlotManager::CheckIfInputNameExists(std::string name, int skip)
 {
     bool ret = false;
@@ -335,7 +416,7 @@ bool PlotManager::CheckIfInputNameExists(std::string name, int skip)
     return ret;
 }
 
-void PlotManager::ProcessMathExpression(AnalogInput& input) {
+void PlotManager::ProcessMathExpression(Signal& input) {
     float out = 0.f;
     static parser_t parser;
 
@@ -349,21 +430,21 @@ void PlotManager::ProcessMathExpression(AnalogInput& input) {
     if (parser.compile(input.math_expr, expression))
     {
         float result = expression.value();
-        input.data_buffer.AddPoint(time, result);
+        input.data_buffer_analog.AddPoint(time, result);
     }
     else {
         printf("Error in expression\n.");
     }
 }
 
-void PlotManager::TickInputData(AnalogInput& input)
+void PlotManager::TickInputData(Signal& input)
 {
     switch (input.type) {
     case PlotManager::function_names::sin:
-        input.data_buffer.AddPoint(time, sinf(time) * input.amplitude);
+        input.data_buffer_analog.AddPoint(time, sinf(time) * input.amplitude);
         break;
     case PlotManager::function_names::cos:
-        input.data_buffer.AddPoint(time, cosf(time) * input.amplitude);
+        input.data_buffer_analog.AddPoint(time, cosf(time) * input.amplitude);
         break;
     case PlotManager::function_names::saw:
         break;
