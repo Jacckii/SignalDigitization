@@ -95,9 +95,6 @@ int main(int argc, char* argv[]) {
                     ImGui::EndChild();
                 }
 
-                ImGui::ShowDemoWindow();
-                ImPlot::ShowDemoWindow();
-
                 ImGui::End();
                 gui->endFrame();
             }
