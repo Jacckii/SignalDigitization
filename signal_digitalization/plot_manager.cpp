@@ -151,19 +151,44 @@ void PlotManager::RenderMainPlot()
                 ImPlot::PlotLine(iter.input_name.c_str(), &iter.data_buffer_analog.Data[0].x, &iter.data_buffer_analog.Data[0].y, iter.data_buffer_analog.Data.size(), iter.data_buffer_analog.Offset, 2 * sizeof(float));
                 ImPlot::PopStyleColor();
                 if (show_sampling && iter.data_buffer_sampling.Data.size() > 0) {
-                    ImPlot::PlotScatter((iter.input_name + std::string(" sample points")).c_str(), &iter.data_buffer_sampling.Data[0].x, &iter.data_buffer_sampling.Data[0].y, iter.data_buffer_sampling.Data.size(), iter.data_buffer_sampling.Offset, 2 * sizeof(float));
+                    if (sample_show_type == 0) {
+                        ImPlot::PlotScatter((iter.input_name + std::string(" sample points")).c_str(), &iter.data_buffer_sampling.Data[0].x, &iter.data_buffer_sampling.Data[0].y, iter.data_buffer_sampling.Data.size(), iter.data_buffer_sampling.Offset, 2 * sizeof(float));
+                    }
+                    else if (sample_show_type == 1)
+                    {
+                        ImPlot::PlotStems((iter.input_name + std::string(" sample points")).c_str(), &iter.data_buffer_sampling.Data[0].x, &iter.data_buffer_sampling.Data[0].y, iter.data_buffer_sampling.Data.size(), 0, iter.data_buffer_sampling.Offset, 2 * sizeof(float));
+                    }
                 }
 
                 if (show_quant_data && iter.data_buffer_quantization.Data.size() > 0) {
-                    ImPlot::PlotStairs((iter.input_name + std::string(" quantizied")).c_str(), &iter.data_buffer_quantization.Data[0].x, &iter.data_buffer_quantization.Data[0].y, iter.data_buffer_quantization.Data.size(), iter.data_buffer_quantization.Offset, 2 * sizeof(float));
+                    if (quant_show_type == 0) {
+                        ImPlot::PlotStairs((iter.input_name + std::string(" quantizied")).c_str(), &iter.data_buffer_quantization.Data[0].x, &iter.data_buffer_quantization.Data[0].y, iter.data_buffer_quantization.Data.size(), iter.data_buffer_quantization.Offset, 2 * sizeof(float));
+                    }
+                    else if (quant_show_type == 1) {
+                        ImPlot::PlotLine((iter.input_name + std::string(" quantizied")).c_str(), &iter.data_buffer_quantization.Data[0].x, &iter.data_buffer_quantization.Data[0].y, iter.data_buffer_quantization.Data.size(), iter.data_buffer_quantization.Offset, 2 * sizeof(float));
+                    }
+                }
+            }
+        }
+        int draw_line_index = 0;
+        if (show_quant_levels) {
+            int number_of_positions = (int)pow(2, quant_bit_depth);
+            float min_max_diff = (float)abs(max_quant_value - min_quant_value);
+            if (number_of_positions != 0 && number_of_positions < 2000) {
+                float qunat_step = min_max_diff / (float)number_of_positions;
+
+                double base = max_quant_value > min_quant_value ? min_quant_value : max_quant_value;
+                for (int i = 0; i < number_of_positions; i++) {
+                    double pos = (float)(base + i * qunat_step);
+                    ImPlot::DragLineY(draw_line_index++, &pos, ImVec4(1, 1, 1, 0.25f), 1, ImPlotDragToolFlags_NoInputs);
                 }
             }
         }
         if (show_quant_limits) {
-            ImPlot::DragLineY(0, &min_quant_value, ImVec4(1, 1, 1, 1), 1, ImPlotDragToolFlags_NoFit);
+            ImPlot::DragLineY(draw_line_index++, &min_quant_value, ImVec4(1, 1, 1, 1), 1, ImPlotDragToolFlags_NoFit);
             ImPlot::TagY(min_quant_value, ImVec4(1, 1, 1, 1), "Min");
 
-            ImPlot::DragLineY(1, &max_quant_value, ImVec4(1, 1, 1, 1), 1, ImPlotDragToolFlags_NoFit);
+            ImPlot::DragLineY(draw_line_index++, &max_quant_value, ImVec4(1, 1, 1, 1), 1, ImPlotDragToolFlags_NoFit);
             ImPlot::TagY(max_quant_value, ImVec4(1, 1, 1, 1), "Max");
         }
         ImPlot::EndPlot();
@@ -175,20 +200,28 @@ void PlotManager::RenderMainPlot()
 void PlotManager::RenderDigitalizationOtions()
 {
     ImGui::NewLine();
-    ImGui::Checkbox("Show sampling", &show_sampling);
     ImGui::Text("Sampling rate:");
     ImGui::PushItemWidth(-1.f);
     ImGui::SliderFloat("##SamplingRate", &sampling_rate, 1.f, 20.f, "%.2f");
     ImGui::PopItemWidth();
-
+    ImGui::Checkbox("Show sampling", &show_sampling);
+    ImGui::Checkbox("Add noise", &add_noise);
+    if (add_noise) {
+        ImGui::Text("Noise multiplier:");
+        ImGui::PushItemWidth(-1.f);
+        ImGui::SliderFloat("##NoiseMultiplier", &noise_multiplier, 0.2f, 5.f, "%.2f");
+        ImGui::PopItemWidth();
+    }
+    
     ImGui::NewLine();
     ImGui::Text("Quantization area:");
     ImGui::InputDouble("Min", &min_quant_value, 0.01, 0.1);
     ImGui::InputDouble("Max", &max_quant_value, 0.01, 0.1);
-    ImGui::Checkbox("Show quantization limits", &show_quant_limits);
+    ImGui::Checkbox("Show quantiz. limits", &show_quant_limits);
+    ImGui::Checkbox("Show quantiz. levels", &show_quant_levels);
     ImGui::Text("Quantization bit depth:");
     ImGui::PushItemWidth(-1.f);
-    ImGui::SliderInt("##QuantizationBitDepth", &quant_bit_depth, 2, 32);
+    ImGui::SliderInt("##QuantizationBitDepth", &quant_bit_depth, 2, 10);
     ImGui::Checkbox("Show quantizied data", &show_quant_data);
     
     ImGui::PopItemWidth();
@@ -200,6 +233,10 @@ void PlotManager::RenderMainPlotSettings()
     ImGui::SameLine();
     ImGui::Checkbox("Auto size axes", &auto_size);
     ImGui::SliderFloat("Sample point size", &marker_size, 2.f, 5.f, "%.2f");
+    ImGui::Text("Sample data render style:");
+    ImGui::Combo("##SampleDataStyle", &sample_show_type, "Scatter\0Stem\0\0");
+    ImGui::Text("Quantizied data render style:");
+    ImGui::Combo("##quantiziedDataStyle", &quant_show_type, "Stairstep\0Line\0\0");
 }
 
 void PlotManager::OpenEditInputDialog()
@@ -403,6 +440,16 @@ void PlotManager::TickOutputData(Signal& output)
             auto data_index = (output.data_buffer_analog.Offset - 1) % output.data_buffer_analog.MaxSize;
             last_y_axis_value = output.data_buffer_analog.Data[data_index].y;
         }
+        //add guassian noise
+        if (add_noise)
+        {
+            bool add_or_decreese = rand() % 2;
+            if (add_or_decreese)
+                last_y_axis_value += GenerateGussianNoise() * noise_multiplier;
+            else
+                last_y_axis_value -= GenerateGussianNoise() * noise_multiplier;
+        }
+
         output.data_buffer_sampling.AddPoint(time, last_y_axis_value);
 
         //quantization

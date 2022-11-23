@@ -64,12 +64,18 @@ private:
 	void TickOutputData(Signal& output);
 	float sampling_rate = 1.5f;
 	bool show_sampling = false;
+	bool add_noise = false;
+	float noise_multiplier = 1.f;
+	int sample_show_type = 0;
+
 	//quantizace
 	double max_quant_value = 1.f;
 	double min_quant_value = -1.f;
 	bool show_quant_limits = false;
 	int quant_bit_depth = 4;
 	bool show_quant_data = false;
+	bool show_quant_levels = false;
+	int quant_show_type = 0;
 
 	//Input
 	bool CheckIfInputNameExists(std::string name, int skip = -1);
