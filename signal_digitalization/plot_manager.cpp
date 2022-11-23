@@ -175,8 +175,6 @@ void PlotManager::RenderMainPlot()
 void PlotManager::RenderDigitalizationOtions()
 {
     ImGui::NewLine();
-    //ToDo: šíøka kvantizaèního intervalu, bitovou hloubku a/d pøevodníku
-    //ToDo: Vykreslit digitalní signal obsahující šum
     ImGui::Checkbox("Show sampling", &show_sampling);
     ImGui::Text("Sampling rate:");
     ImGui::PushItemWidth(-1.f);
