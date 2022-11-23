@@ -1307,7 +1307,7 @@ namespace ImPlot {
         ImGui::CheckboxFlags("NoInput", (unsigned int*)&flags, ImPlotDragToolFlags_NoInputs);
         if (ImPlot::BeginPlot("##lines", ImVec2(-1, 0))) {
             ImPlot::SetupAxesLimits(0, 1, 0, 1);
-            ImPlot::DragLineX(0, &x1, ImVec4(1, 1, 1, 1), 1, flags);
+            ImPlot::DragLineX(0, &x1, ImVec4(1, 1, 1, 1), 1, ImPlotDragToolFlags_NoInputs);
             ImPlot::DragLineX(1, &x2, ImVec4(1, 1, 1, 1), 1, flags);
             ImPlot::DragLineY(2, &y1, ImVec4(1, 1, 1, 1), 1, flags);
             ImPlot::DragLineY(3, &y2, ImVec4(1, 1, 1, 1), 1, flags);

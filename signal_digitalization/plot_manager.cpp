@@ -150,10 +150,13 @@ void PlotManager::RenderMainPlot()
                 ImPlot::PushStyleColor(ImPlotCol_Line, iter.plot_color);
                 ImPlot::PlotLine(iter.input_name.c_str(), &iter.data_buffer_analog.Data[0].x, &iter.data_buffer_analog.Data[0].y, iter.data_buffer_analog.Data.size(), iter.data_buffer_analog.Offset, 2 * sizeof(float));
                 ImPlot::PopStyleColor();
-                if (show_sampling) {
+                if (show_sampling && iter.data_buffer_sampling.Data.size() > 0) {
                     ImPlot::PlotScatter((iter.input_name + std::string(" sample points")).c_str(), &iter.data_buffer_sampling.Data[0].x, &iter.data_buffer_sampling.Data[0].y, iter.data_buffer_sampling.Data.size(), iter.data_buffer_sampling.Offset, 2 * sizeof(float));
                 }
-                
+
+                if (show_quant_data && iter.data_buffer_quantization.Data.size() > 0) {
+                    ImPlot::PlotStairs((iter.input_name + std::string(" quantizied")).c_str(), &iter.data_buffer_quantization.Data[0].x, &iter.data_buffer_quantization.Data[0].y, iter.data_buffer_quantization.Data.size(), iter.data_buffer_quantization.Offset, 2 * sizeof(float));
+                }
             }
         }
         if (show_quant_limits) {
@@ -188,6 +191,7 @@ void PlotManager::RenderDigitalizationOtions()
     ImGui::Text("Quantization bit depth:");
     ImGui::PushItemWidth(-1.f);
     ImGui::SliderInt("##QuantizationBitDepth", &quant_bit_depth, 2, 32);
+    ImGui::Checkbox("Show quantizied data", &show_quant_data);
     
     ImGui::PopItemWidth();
 }
@@ -369,14 +373,30 @@ float PlotManager::GenerateGussianNoise()
     return dist(generator);
 }
 
+float PlotManager::FindClosestQuantValue(float value, float quant_step, int number_of_positions, float min, float max) {
+    float closest_value = FLT_MIN;
+    float closest_diff = FLT_MAX;
+
+    float base = max > min ? min : max;
+    
+    for (int i = 0; i < number_of_positions; i++) {
+        auto pos = base + quant_step * i;
+        auto diff = abs(value - pos);
+        if (diff < closest_diff) {
+            closest_diff = diff;
+            closest_value = pos;
+        }
+    }
+
+    return closest_value;
+}
+
 void PlotManager::TickOutputData(Signal& output)
 {
-    //sampling
     auto sampling_rate_in_ms = 1.f / (float)sampling_rate;
-
     if (output.last_sample_time + sampling_rate_in_ms < time) {
+        //sampling
         output.last_sample_time = time;
-
         //get last valid analog value
         float last_y_axis_value = 0.f;
         if (output.data_buffer_analog.Offset == 0)
@@ -385,17 +405,17 @@ void PlotManager::TickOutputData(Signal& output)
             auto data_index = (output.data_buffer_analog.Offset - 1) % output.data_buffer_analog.MaxSize;
             last_y_axis_value = output.data_buffer_analog.Data[data_index].y;
         }
-        output.data_buffer_sampling.Offset = output.data_buffer_analog.Offset;
         output.data_buffer_sampling.AddPoint(time, last_y_axis_value);
-    }
 
-    //quantization
-    int number_of_positions = pow(2, quant_bit_depth);
-    float min_max_diff = abs(max_quant_value - min_quant_value);
-    if (number_of_positions != 0) {
-        float qunat_step = min_max_diff / (float)number_of_positions;
-
-
+        //quantization
+        int number_of_positions = pow(2, quant_bit_depth);
+        float min_max_diff = abs(max_quant_value - min_quant_value);
+        if (number_of_positions != 0) {
+            float qunat_step = min_max_diff / (float)number_of_positions;
+            
+            float quantizied_value = FindClosestQuantValue(last_y_axis_value, qunat_step, number_of_positions, min_quant_value, max_quant_value);
+            output.data_buffer_quantization.AddPoint(time, quantizied_value);
+        };
     }
 }
 

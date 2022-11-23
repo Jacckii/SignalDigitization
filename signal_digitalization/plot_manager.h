@@ -60,6 +60,7 @@ private:
 
 	//Digital
 	float GenerateGussianNoise();
+	float FindClosestQuantValue(float value, float quant_step, int number_of_positions, float min, float max);
 	void TickOutputData(Signal& output);
 	float sampling_rate = 1.5f;
 	bool show_sampling = false;
@@ -68,6 +69,7 @@ private:
 	double min_quant_value = -1.f;
 	bool show_quant_limits = false;
 	int quant_bit_depth = 4;
+	bool show_quant_data = false;
 
 	//Input
 	bool CheckIfInputNameExists(std::string name, int skip = -1);
