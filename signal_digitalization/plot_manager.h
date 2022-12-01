@@ -23,16 +23,18 @@ private:
 		std::string math_expr;
 		float amplitude;
 		ScrollingBuffer data_buffer_analog;
+		float noise;
 
 		//Output digital
 		ScrollingBuffer data_buffer_sampling;
 		float last_sample_time;
 		ScrollingBuffer data_buffer_quantization;
+		ScrollingBuffer data_buffer_quantization_index;
 		
 		Signal(std::string name, PlotManager::function_names math_func, 
 			std::string math_expression, ImVec4 color, float amplitude_)
 			: input_name(name), type(math_func), math_expr(math_expression), 
-			plot_color(color), amplitude(amplitude_), last_sample_time(0.f) {};
+			plot_color(color), amplitude(amplitude_), last_sample_time(0.f), noise(0.f) {};
 	};
 
 public:
@@ -54,6 +56,7 @@ private:
 	void OpenEditInputDialog();
 	void RenderEditInputDialog();
 	int RenderAnalogInputCard(Signal& input);
+	void PlotDataTooltip(const char* name, const float* xs, const float* value, float width_percent, int count, int stride);
 	std::vector<std::string> vec_function_names;
 	float marker_size = 3.2f;
 	bool auto_size = true;
@@ -61,6 +64,7 @@ private:
 	//Digital
 	float GenerateGussianNoise();
 	float FindClosestQuantValue(float value, float quant_step, int number_of_positions, float min, float max);
+	int FindClosestQuantIndex(float value, float quant_step, int number_of_positions, float min, float max);
 	void TickOutputData(Signal& output);
 	float sampling_rate = 1.5f;
 	bool show_sampling = false;
@@ -76,6 +80,11 @@ private:
 	bool show_quant_data = false;
 	bool show_quant_levels = false;
 	int quant_show_type = 0;
+
+	bool show_digital_data = false;
+	int digital_data_type = 0; //bits, hex, decimal
+	std::string NumberToBitString(float number);
+	std::string NumberToHexString(float number);
 
 	//Input
 	bool CheckIfInputNameExists(std::string name, int skip = -1);

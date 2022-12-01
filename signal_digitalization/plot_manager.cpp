@@ -6,6 +6,7 @@
 #include <imgui_internal.h>
 #include <implot.h>
 #include <random>
+#include <implot_internal.h>
 
 PlotManager plot_manager;
 
@@ -168,6 +169,40 @@ void PlotManager::RenderMainPlot()
                         ImPlot::PlotLine((iter.input_name + std::string(" quantizied")).c_str(), &iter.data_buffer_quantization.Data[0].x, &iter.data_buffer_quantization.Data[0].y, iter.data_buffer_quantization.Data.size(), iter.data_buffer_quantization.Offset, 2 * sizeof(float));
                     }
                 }
+
+                if (show_digital_data && iter.data_buffer_quantization_index.Data.size() > 0 && iter.data_buffer_quantization.Data.size() > 0) {
+                    //render text
+                    auto last_index_value = ImVec2(0,0);
+                    if (iter.data_buffer_quantization_index.Offset == 0)
+                        last_index_value = iter.data_buffer_quantization_index.Data.back();
+                    else {
+                        auto data_index = (iter.data_buffer_quantization_index.Offset - 1) % iter.data_buffer_quantization_index.MaxSize;
+                        last_index_value = iter.data_buffer_quantization_index.Data[data_index];
+                    }
+
+                    auto last_value = ImVec2(0, 0);
+                    if (iter.data_buffer_quantization.Offset == 0)
+                        last_value = iter.data_buffer_quantization.Data.back();
+                    else {
+                        auto data_index = (iter.data_buffer_quantization.Offset - 1) % iter.data_buffer_quantization.MaxSize;
+                        last_value = iter.data_buffer_quantization.Data[data_index];
+                    }
+
+                    if (digital_data_type == 0)
+                    {
+                        ImPlot::Annotation(last_index_value.x, last_value.y, ImVec4(1.f, 1.f, 1.f, 0.4f), ImVec2(-5.f, -5.f), true, "%s", NumberToBitString(last_index_value.y).c_str());
+                    }
+                    else if (digital_data_type == 1) {
+                        ImPlot::Annotation(last_index_value.x, last_value.y, ImVec4(1.f, 1.f, 1.f, 0.4f), ImVec2(-5.f, -5.f), true, "%s", NumberToHexString(last_index_value.y).c_str());
+                    }
+                    else if (digital_data_type == 2) {
+                        ImPlot::Annotation(last_index_value.x, last_value.y, ImVec4(1.f, 1.f, 1.f, 0.4f), ImVec2(-5.f, -5.f), true, "%d", (int)last_index_value.y);
+                    }
+
+                    //render tooltip
+                    auto size = iter.data_buffer_quantization_index.Offset == 0 ? (iter.data_buffer_quantization_index.Data.size()) : (iter.data_buffer_quantization_index.Offset % iter.data_buffer_quantization_index.MaxSize);
+                    PlotDataTooltip(iter.input_name.c_str(), &iter.data_buffer_quantization_index.Data[0].x, &iter.data_buffer_quantization_index.Data[0].y, 0.25f, size, 2 * sizeof(float));
+                }
             }
         }
         int draw_line_index = 0;
@@ -197,6 +232,64 @@ void PlotManager::RenderMainPlot()
     ImPlot::GetStyle() = old_plot_style;
 }
 
+
+template <typename T>
+int BinarySearch(const T* arr, int r, T x, int stride) {
+    int best_index = 0;
+    float best_diff = FLT_MAX;
+
+    for (int i = 0; i < r; i++) {
+        auto item = *(T*)((uintptr_t)arr + (uintptr_t)(stride * i));
+        float diff = fabs(x - item);
+
+        if (diff <= best_diff && x > item) {
+            best_index = i;
+            best_diff = diff;
+        }
+    }
+
+    return best_index;
+}
+
+
+void PlotManager::PlotDataTooltip(const char* name, const float* xs, const float* value, float width_percent, int count, int stride) {
+
+    // get ImGui window DrawList
+    ImDrawList* draw_list = ImPlot::GetPlotDrawList();
+    // calc real value width
+    double half_width = width_percent / 2.f;
+
+    // custom tool
+    if (ImPlot::IsPlotHovered()) {
+        ImPlotPoint mouse = ImPlot::GetPlotMousePos();
+        float  tool_l = ImPlot::PlotToPixels(mouse.x - half_width, mouse.y).x;
+        float  tool_r = ImPlot::PlotToPixels(mouse.x + half_width, mouse.y).x;
+        float  tool_t = ImPlot::GetPlotPos().y;
+        float  tool_b = tool_t + ImPlot::GetPlotSize().y;
+        ImPlot::PushPlotClipRect();
+        draw_list->AddRectFilled(ImVec2(tool_l, tool_t), ImVec2(tool_r, tool_b), IM_COL32(128, 128, 128, 64));
+        ImPlot::PopPlotClipRect();
+        // find mouse location index
+        int idx = BinarySearch<float>(xs, count, (float)mouse.x, stride);
+        // render tool tip (won't be affected by plot clip rect)
+        if (idx != -1) {
+            ImGui::BeginTooltip();
+
+            if (digital_data_type == 0)
+            {
+                ImGui::Text("%s: %s", name, NumberToBitString(*(float*)((uintptr_t)value + idx * stride)).c_str());
+            }
+            else if (digital_data_type == 1) {
+                ImGui::Text("%s: %s", name, NumberToHexString(*(float*)((uintptr_t)value + idx * stride)).c_str());
+            }
+            else if (digital_data_type == 2) {
+                ImGui::Text("%s: %d", name, (int)*(float*)((uintptr_t)value + idx * stride));
+            }
+            ImGui::EndTooltip();
+        }
+    }
+}
+
 void PlotManager::RenderDigitalizationOtions()
 {
     ImGui::NewLine();
@@ -205,6 +298,7 @@ void PlotManager::RenderDigitalizationOtions()
     ImGui::SliderFloat("##SamplingRate", &sampling_rate, 1.f, 20.f, "%.2f");
     ImGui::PopItemWidth();
     ImGui::Checkbox("Show sampling", &show_sampling);
+    ImGui::NewLine();
     ImGui::Checkbox("Add noise", &add_noise);
     if (add_noise) {
         ImGui::Text("Noise multiplier:");
@@ -223,7 +317,11 @@ void PlotManager::RenderDigitalizationOtions()
     ImGui::PushItemWidth(-1.f);
     ImGui::SliderInt("##QuantizationBitDepth", &quant_bit_depth, 2, 10);
     ImGui::Checkbox("Show quantizied data", &show_quant_data);
-    
+    ImGui::NewLine();
+    ImGui::Checkbox("Show digital data", &show_digital_data);
+    ImGui::Text("Data type:");
+    ImGui::Combo("##digital_data_type", &digital_data_type, "Binary\0Hexadeciaml\0Decimal\0\0");
+
     ImGui::PopItemWidth();
 }
 
@@ -426,6 +524,24 @@ float PlotManager::FindClosestQuantValue(float value, float quant_step, int numb
     return closest_value;
 }
 
+int PlotManager::FindClosestQuantIndex(float value, float quant_step, int number_of_positions, float min, float max) {
+    int closest_index = 0;
+    float closest_diff = FLT_MAX;
+
+    float base = max > min ? min : max;
+
+    for (int i = 0; i < number_of_positions; i++) {
+        auto pos = base + quant_step * i;
+        auto diff = abs(value - pos);
+        if (diff < closest_diff) {
+            closest_diff = diff;
+            closest_index = i;
+        }
+    }
+
+    return closest_index;
+}
+
 void PlotManager::TickOutputData(Signal& output)
 {
     auto sampling_rate_in_ms = 1.f / (float)sampling_rate;
@@ -460,8 +576,58 @@ void PlotManager::TickOutputData(Signal& output)
             
             float quantizied_value = FindClosestQuantValue(last_y_axis_value, qunat_step, number_of_positions, (float)min_quant_value, (float)max_quant_value);
             output.data_buffer_quantization.AddPoint(time, quantizied_value);
+
+            int quant_index = FindClosestQuantIndex(last_y_axis_value, qunat_step, number_of_positions, (float)min_quant_value, (float)max_quant_value);
+            output.data_buffer_quantization_index.AddPoint(time, (float)quant_index);
         };
     }
+}
+
+void bin(unsigned n, std::string& str)
+{
+    if (n > 1)
+        bin(n >> 1, str);
+
+    if (n & 1)
+        str += '1';
+    else
+        str += '0';
+}
+
+std::string PlotManager::NumberToBitString(float number)
+{
+    int int_num = (int)number;
+    unsigned int un_int = abs(int_num);
+    std::string out = "";
+    bin(un_int, out);
+    if (out.length() < quant_bit_depth)
+    {
+        std::string prefix = "";
+        auto diff = quant_bit_depth - out.length();
+        for (int i = 0; i < diff; i++) {
+            prefix += "0";
+        }
+        out = prefix + out;
+    }
+    return out;
+}
+
+std::string PlotManager::NumberToHexString(float number)
+{
+    int int_num = (int)number;
+    unsigned int un_int = abs(int_num);
+    std::stringstream stream;
+    stream << std::hex << un_int;
+    std::string result = stream.str();
+
+    //to upper
+    for (auto& iter : result) {
+        iter = toupper(iter);
+    }
+
+    result = "0x" + result;
+
+    return result;
 }
 
 bool PlotManager::CheckIfInputNameExists(std::string name, int skip)
