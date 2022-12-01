@@ -700,6 +700,7 @@ void PlotManager::TickInputData(Signal& input)
         output = atanf(tanf(time));
         break;
     case PlotManager::function_names::sqare:
+        output = sinf(time) > 0.f ? 1.f : -1.f;
         break;
     case PlotManager::function_names::random:
         break;
