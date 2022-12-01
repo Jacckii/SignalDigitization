@@ -32,9 +32,9 @@ private:
 		ScrollingBuffer data_buffer_quantization_index;
 		
 		Signal(std::string name, PlotManager::function_names math_func, 
-			std::string math_expression, ImVec4 color, float amplitude_)
+			std::string math_expression, ImVec4 color, float amplitude_, float noise_)
 			: input_name(name), type(math_func), math_expr(math_expression), 
-			plot_color(color), amplitude(amplitude_), last_sample_time(0.f), noise(0.f) {};
+			plot_color(color), amplitude(amplitude_), last_sample_time(0.f), noise(noise_) {};
 	};
 
 public:
@@ -88,12 +88,13 @@ private:
 
 	//Input
 	bool CheckIfInputNameExists(std::string name, int skip = -1);
-	void ProcessMathExpression(Signal& input);
+	float ProcessMathExpression(Signal& input);
 	void TickInputData(Signal& input);
 	void DeleteInput(size_t index);
 	std::vector<Signal> inputs;
 	int edit_input = 0;
 	bool paused = false;
+	float time_scale = 1.f;
 
 	float time = 0.f;
 };

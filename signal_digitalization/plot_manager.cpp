@@ -27,7 +27,7 @@ void PlotManager::TickData()
     if (paused)
         return;
 
-    time += ImGui::GetIO().DeltaTime;
+    time += ImGui::GetIO().DeltaTime * time_scale;
 
     for (auto& iter : inputs) {
         TickInputData(iter);
@@ -49,6 +49,7 @@ void PlotManager::RenderAddInputDialog()
         static char math_expression[500] = "\0";
         static int item = 0;
         static float amplitude = 1.f;
+        static float noise = 0.f;
         ImGui::Text("Select input type:");
         ImGui::ComboV("##input_function", &item, vec_function_names);
         ImGui::Text("Input name:");
@@ -65,6 +66,9 @@ void PlotManager::RenderAddInputDialog()
             ImGui::Text("Amplitude:");
             ImGui::SliderFloat("##AmplitudeSlider", &amplitude, 0.01f, 1.f, "%.2f");
         }
+
+        ImGui::Text("Noise:");
+        ImGui::SliderFloat("##noiseAddInput", &noise, 0.00f, 5.f, "%.2f");
 
         ImGui::Dummy(ImVec2(300.f, 15.f));
 
@@ -87,7 +91,7 @@ void PlotManager::RenderAddInputDialog()
                 (PlotManager::function_names)item, 
                 std::string(math_expression), 
                 ImVec4(color[0], color[1], color[2], color[3]),
-                amplitude);
+                amplitude, noise);
 
             inputs.push_back(temp);
             uid++;
@@ -277,13 +281,13 @@ void PlotManager::PlotDataTooltip(const char* name, const float* xs, const float
 
             if (digital_data_type == 0)
             {
-                ImGui::Text("%s: %s", name, NumberToBitString(*(float*)((uintptr_t)value + idx * stride)).c_str());
+                ImGui::Text("%s: %s", name, NumberToBitString(*(float*)((uintptr_t)value + (DWORD)idx * (DWORD)stride)).c_str());
             }
             else if (digital_data_type == 1) {
-                ImGui::Text("%s: %s", name, NumberToHexString(*(float*)((uintptr_t)value + idx * stride)).c_str());
+                ImGui::Text("%s: %s", name, NumberToHexString(*(float*)((uintptr_t)value + (DWORD)idx * (DWORD)stride)).c_str());
             }
             else if (digital_data_type == 2) {
-                ImGui::Text("%s: %d", name, (int)*(float*)((uintptr_t)value + idx * stride));
+                ImGui::Text("%s: %d", name, (int)*(float*)((uintptr_t)value + (DWORD)idx * (DWORD)stride));
             }
             ImGui::EndTooltip();
         }
@@ -327,14 +331,22 @@ void PlotManager::RenderDigitalizationOtions()
 
 void PlotManager::RenderMainPlotSettings()
 {
+    ImGui::Columns(2);
     ImGui::Checkbox("Pause!", &paused);
-    ImGui::SameLine();
+    ImGui::Text("Time scale:");
+    ImGui::PushItemWidth(-1.f);
+    ImGui::SliderFloat("##TimeScale", &time_scale, 0.1f, 2.f, "%.2f");
+    ImGui::Text("Sample point size:");
+    ImGui::SliderFloat("##Samplepointsize", &marker_size, 2.f, 5.f, "%.2f");
+    ImGui::PopItemWidth();
+    ImGui::NextColumn();
     ImGui::Checkbox("Auto size axes", &auto_size);
-    ImGui::SliderFloat("Sample point size", &marker_size, 2.f, 5.f, "%.2f");
     ImGui::Text("Sample data render style:");
+    ImGui::PushItemWidth(-1.f);
     ImGui::Combo("##SampleDataStyle", &sample_show_type, "Scatter\0Stem\0\0");
     ImGui::Text("Quantizied data render style:");
     ImGui::Combo("##quantiziedDataStyle", &quant_show_type, "Stairstep\0Line\0\0");
+    ImGui::PopItemWidth();
 }
 
 void PlotManager::OpenEditInputDialog()
@@ -356,6 +368,7 @@ void PlotManager::RenderEditInputDialog()
             static int item = 0;
             static float color[4] = { 0.4f, 0.7f, 0.0f, 1.f };
             static float amplitude = 1.f;
+            static float noise = 0.f;
 
             auto& temp = inputs[edit_input];
             if (just_opne) {
@@ -390,6 +403,9 @@ void PlotManager::RenderEditInputDialog()
                 ImGui::Text("Amplitude:");
                 ImGui::SliderFloat("##AmplitudeSlider", &amplitude, 0.01f, 1.f, "%.2f");
             }
+
+            ImGui::Text("Noise:");
+            ImGui::SliderFloat("##noiseEditInput", &noise, 0.00f, 5.f, "%.2f");
 
             just_opne = false;
             ImGui::Dummy(ImVec2(300.f, 15.f));
@@ -431,6 +447,7 @@ void PlotManager::RenderEditInputDialog()
                 temp.type = (PlotManager::function_names)item;
                 temp.plot_color = ImVec4(color[0], color[1], color[2], color[3]);
                 temp.amplitude = amplitude;
+                temp.noise = noise;
                 ImGui::CloseCurrentPopup();
                 just_opne = true;
             }
@@ -647,7 +664,7 @@ bool PlotManager::CheckIfInputNameExists(std::string name, int skip)
     return ret;
 }
 
-void PlotManager::ProcessMathExpression(Signal& input) {
+float PlotManager::ProcessMathExpression(Signal& input) {
     float out = 0.f;
     static parser_t parser;
 
@@ -661,32 +678,51 @@ void PlotManager::ProcessMathExpression(Signal& input) {
     if (parser.compile(input.math_expr, expression))
     {
         float result = expression.value();
-        input.data_buffer_analog.AddPoint(time, result);
+        return result;
     }
     else {
         printf("Error in expression\n.");
     }
+    return 0.f;
 }
 
 void PlotManager::TickInputData(Signal& input)
 {
+    float output = 0;
     switch (input.type) {
     case PlotManager::function_names::sin:
-        input.data_buffer_analog.AddPoint(time, sinf(time) * input.amplitude);
+        output = sinf(time);
         break;
     case PlotManager::function_names::cos:
-        input.data_buffer_analog.AddPoint(time, cosf(time) * input.amplitude);
+        output = cosf(time);
         break;
     case PlotManager::function_names::saw:
+        output = atanf(tanf(time));
         break;
     case PlotManager::function_names::sqare:
         break;
     case PlotManager::function_names::random:
         break;
     case PlotManager::function_names::math_expression:
-        ProcessMathExpression(input);
+        output = ProcessMathExpression(input);
         break;
     }
+
+    //change amplitude
+    if (input.type != PlotManager::function_names::math_expression)
+        output *= input.amplitude;
+
+    //add noise
+    if (input.noise != 0.f)
+    {
+        bool add_or_decreese = rand() % 2;
+        if (add_or_decreese)
+            output += GenerateGussianNoise() * input.noise;
+        else
+            output -= GenerateGussianNoise() * input.noise;
+    }
+
+    input.data_buffer_analog.AddPoint(time, output);
 }
 
 void PlotManager::DeleteInput(size_t index)
