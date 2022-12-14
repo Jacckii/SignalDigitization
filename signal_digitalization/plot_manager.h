@@ -51,7 +51,8 @@ public:
 	void RenderMainPlot();
 	void RenderDigitalizationOtions();
 	void RenderMainPlotSettings();
-private:
+	void RenderTextOutput();
+ private:
 	//GUI
 	void OpenEditInputDialog();
 	void RenderEditInputDialog();

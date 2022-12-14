@@ -347,6 +347,111 @@ void PlotManager::RenderMainPlotSettings()
     ImGui::Text("Quantizied data render style:");
     ImGui::Combo("##quantiziedDataStyle", &quant_show_type, "Stairstep\0Line\0\0");
     ImGui::PopItemWidth();
+    ImGui::Columns(1);
+}
+
+void PlotManager::RenderTextOutput()
+{
+    ImGui::Text("Output:");
+    ImGui::Text("Selected:");
+    ImGui::SameLine();
+
+    static std::string selected_string = "None";
+    static int selected_index = 0;
+    if (inputs.size() <= 0 && selected_index >= 0) {
+        selected_index = -1;
+        selected_string = "None";
+    }
+
+    if (selected_index == -1 && inputs.size() > 0) {
+        selected_index = 0;
+    }
+
+    if (selected_index >= 0 && selected_index < inputs.size())
+        selected_string = inputs[selected_index].input_name;
+
+    if (ImGui::BeginCombo("##Selection", selected_string.c_str(), 0)) {
+        for (int n = 0; n < inputs.size(); n++)
+        {
+            const bool is_selected = (selected_index == n);
+            if (ImGui::Selectable(inputs[n].input_name.c_str(), is_selected))
+                selected_index = n;
+
+            if (is_selected)
+                ImGui::SetItemDefaultFocus();
+        }
+        ImGui::EndCombo();
+    }
+
+    ImGui::PushStyleColor(ImGuiCol_ChildBg, ImGui::GetStyle().Colors[ImGuiCol_WindowBg]);
+    
+    ImGui::BeginChild("##outputText", 
+        ImVec2(0, ImGui::CalcTextSize("TEST STRING").y + 
+            ImGui::GetStyle().WindowPadding.y * 2 + 
+            ImGui::GetStyle().ScrollbarSize), 
+        true, ImGuiWindowFlags_HorizontalScrollbar);
+    {
+        if (selected_index < inputs.size()) {
+            auto& in = inputs[selected_index];
+            std::string out = "";
+
+            inputs[selected_index].data_buffer_quantization_index;
+ 
+            int last_data_index = 0;
+            int first_data_index = 0;
+            if (in.data_buffer_quantization_index.Offset != 0) {
+                last_data_index = (in.data_buffer_quantization_index.Offset - 1) % in.data_buffer_quantization_index.MaxSize;
+                first_data_index = last_data_index - in.data_buffer_quantization_index.MaxSize;
+                if (first_data_index < 0)
+                {
+                    first_data_index = in.data_buffer_quantization_index.MaxSize + first_data_index;
+                }
+            }
+
+            for (auto i = 0; i < in.data_buffer_quantization_index.MaxSize; i++) {
+                int correct_index = 0;
+                if (in.data_buffer_quantization_index.Offset != 0) {
+                    correct_index = first_data_index + i;
+                    if (correct_index > in.data_buffer_quantization_index.MaxSize)
+                        correct_index -= in.data_buffer_quantization_index.MaxSize;
+                }
+                else {
+                    correct_index = i;
+
+                    if (i >= in.data_buffer_quantization_index.Data.size())
+                        break;
+                }
+                    
+
+                auto& iter = in.data_buffer_quantization_index.Data[correct_index];
+                if (digital_data_type == 0) {
+                    out += " ";
+                    out += NumberToBitString(iter.y);
+                }
+                else if (digital_data_type == 1) {
+                    out += " ";
+                    out += NumberToHexString(iter.y);
+                }
+                else if (digital_data_type == 2) {
+                    out += " ";
+                    char str[32];
+                    sprintf(str, "%0.f", iter.y);
+
+                    out += str;
+                }
+            }
+
+            ImGui::TextUnformatted(out.c_str());
+            ImGui::SameLine();
+            ImGui::SetScrollHereX(1.0f);
+        }
+    }
+    ImGui::EndChild();
+    ImGui::PopStyleColor();
+
+    if (ImGui::Button("Export data")) {
+        
+    }
 }
 
 void PlotManager::OpenEditInputDialog()
