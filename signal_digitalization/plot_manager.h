@@ -3,6 +3,7 @@
 #include <string>
 #include <gui.h>
 #include "structs.h"
+#include "json.h"
 
 class PlotManager {
 private:
@@ -35,6 +36,10 @@ private:
 			std::string math_expression, ImVec4 color, float amplitude_, float noise_)
 			: input_name(name), type(math_func), math_expr(math_expression), 
 			plot_color(color), amplitude(amplitude_), last_sample_time(0.f), noise(noise_) {};
+
+		Signal()
+			: input_name("name"), type(function_names::sin), math_expr("math_express"),
+			plot_color({1.f, 0.5f, 0.1f, 1.f}), amplitude(1.f), last_sample_time(0.f), noise(0.f) {};
 	};
 
 public:
@@ -52,6 +57,10 @@ public:
 	void RenderDigitalizationOtions();
 	void RenderMainPlotSettings();
 	void RenderTextOutput();
+
+	void ClearAllInputs() { inputs.clear(); };
+	void LoadJsonData(nlohmann::json& data);
+	nlohmann::json GetJsonData();
  private:
 	//GUI
 	void OpenEditInputDialog();
@@ -61,6 +70,8 @@ public:
 	std::vector<std::string> vec_function_names;
 	float marker_size = 3.2f;
 	bool auto_size = true;
+
+	void ExportDataToFile(int data_input_index, std::string filePathName, bool use_dot, int data_format);
 
 	//Digital
 	float GenerateGussianNoise();

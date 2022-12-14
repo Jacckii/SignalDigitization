@@ -7,6 +7,12 @@
 #include <implot.h>
 #include <random>
 #include <implot_internal.h>
+#include <ImGuiFileDialog.h>
+
+#include <iostream>
+#include <fstream>
+#include <vector>
+
 
 PlotManager plot_manager;
 
@@ -352,7 +358,6 @@ void PlotManager::RenderMainPlotSettings()
 
 void PlotManager::RenderTextOutput()
 {
-    ImGui::Text("Output:");
     ImGui::Text("Selected:");
     ImGui::SameLine();
 
@@ -394,8 +399,6 @@ void PlotManager::RenderTextOutput()
         if (selected_index < inputs.size()) {
             auto& in = inputs[selected_index];
             std::string out = "";
-
-            inputs[selected_index].data_buffer_quantization_index;
  
             int last_data_index = 0;
             int first_data_index = 0;
@@ -449,8 +452,191 @@ void PlotManager::RenderTextOutput()
     ImGui::EndChild();
     ImGui::PopStyleColor();
 
+    static int selected_format = 0;
+    ImGui::Text("Export data format:");
+    ImGui::Combo("##formatexport", &selected_format, "Decimal\0Hexadecimal\0binary\0\0");
     if (ImGui::Button("Export data")) {
-        
+        ImGuiFileDialog::Instance()->OpenModal("Save as##export_output_data", "Save file", ".csv", ".");
+    }
+
+    static bool use_dot = false;
+    ImGui::SameLine();
+    ImGui::Checkbox("Use dot as decimal place", &use_dot);
+
+    // display
+    if (ImGuiFileDialog::Instance()->Display("Save as##export_output_data", 32, ImVec2(400, 300)))
+    {
+        // action if OK
+        if (ImGuiFileDialog::Instance()->IsOk())
+        {
+            std::string filePathName = ImGuiFileDialog::Instance()->GetFilePathName();
+            std::string filePath = ImGuiFileDialog::Instance()->GetCurrentPath();
+            
+            //save data to the file
+            ExportDataToFile(selected_index, filePathName, use_dot, selected_format);
+        }
+
+        // close
+        ImGuiFileDialog::Instance()->Close();
+    }
+}
+
+void PlotManager::LoadJsonData(nlohmann::json& data)
+{
+    inputs.clear();
+    if (data.is_null()) {
+        return;
+    }
+
+    // Loop over the json array of settings
+    for (nlohmann::json json_setting : data)
+    {
+        Signal in;
+
+        in.input_name = json_setting.value("input_name", in.input_name);
+        in.plot_color.x = json_setting.value("plot_color_x", in.plot_color.x);
+        in.plot_color.y = json_setting.value("plot_color_y", in.plot_color.y);
+        in.plot_color.z = json_setting.value("plot_color_z", in.plot_color.z);
+        in.plot_color.w = json_setting.value("plot_color_w", in.plot_color.w);
+        in.type = (PlotManager::function_names)json_setting.value("type", (int)in.type);
+        in.math_expr = json_setting.value("math_expr", in.math_expr);
+        in.amplitude = json_setting.value("amplitude", in.amplitude);
+        in.noise = json_setting.value("noise", in.noise);
+        inputs.push_back(in);
+    }
+
+    marker_size = data.value("marker_size", 3.2f);
+    auto_size = data.value("auto_size", true);
+    sampling_rate = data.value("sampling_rate", 1.5f);
+    show_sampling = data.value("show_sampling", false);
+    add_noise = data.value("add_noise", false);
+    noise_multiplier = data.value("noise_multiplier", 1.f);
+    sample_show_type = data.value("sample_show_type", 0);
+    max_quant_value = data.value("max_quant_value", 1.f);
+    min_quant_value = data.value("min_quant_value", -1.f);
+    show_quant_limits = data.value("show_quant_limits", false);
+    quant_bit_depth = data.value("quant_bit_depth", 4);
+    show_quant_data = data.value("show_quant_data", false);
+    show_quant_levels = data.value("show_quant_levels", false);
+    quant_show_type = data.value("show_quant_levels", 0);
+    show_digital_data = data.value("show_digital_data", false);
+    digital_data_type = data.value("digital_data_type", 0);
+    paused = data.value("paused", false);
+    time_scale = data.value("time_scale", 1.f);
+}
+
+nlohmann::json PlotManager::GetJsonData()
+{
+    nlohmann::json data;
+    for (const auto& iter : inputs) {
+        nlohmann::json item;
+        item["input_name"] = iter.input_name;
+        item["plot_color_x"] = iter.plot_color.x;
+        item["plot_color_y"] = iter.plot_color.y;
+        item["plot_color_z"] = iter.plot_color.z;
+        item["plot_color_w"] = iter.plot_color.w;
+        item["type"] = (int)iter.type;
+        item["math_expr"] = iter.math_expr;
+        item["amplitude"] = iter.amplitude;
+        item["noise"] = iter.noise;
+        data.push_back(item);
+    }
+
+    data["marker_size"] = marker_size;
+    data["auto_size"] = auto_size;
+    data["sampling_rate"] = sampling_rate;
+    data["show_sampling"] = show_sampling;
+    data["add_noise"] = add_noise;
+    data["noise_multiplier"] = noise_multiplier;
+    data["sample_show_type"] = sample_show_type;
+    data["max_quant_value"] = max_quant_value;
+    data["min_quant_value"] = min_quant_value;
+    data["show_quant_limits"] = show_quant_limits;
+    data["quant_bit_depth"] = quant_bit_depth;
+    data["show_quant_data"] = show_quant_data;
+    data["show_quant_levels"] = show_quant_levels;
+    data["quant_show_type"] = quant_show_type;
+    data["show_digital_data"] = show_digital_data;
+    data["digital_data_type"] = digital_data_type;
+    data["paused"] = paused;
+    data["time_scale"] = time_scale;
+
+    return data;
+}
+
+void PlotManager::ExportDataToFile(int data_input_index, std::string filePathName, bool use_dot, int data_format) {
+    if (data_input_index >= inputs.size()) {
+        printf("Error while saving file: selected plot was invalid!");
+        return;
+    }
+    std::string separator = ";";
+    char original_symbol = '.';
+    char desired_symbol = ',';
+
+    try {
+        // Open the file for writing
+        std::ofstream file(filePathName);
+
+        file << "x" << separator << " y" << "\n";
+        auto& in = inputs[data_input_index];
+        int last_data_index = 0;
+        int first_data_index = 0;
+        if (in.data_buffer_quantization_index.Offset != 0) {
+            last_data_index = (in.data_buffer_quantization_index.Offset - 1) % in.data_buffer_quantization_index.MaxSize;
+            first_data_index = last_data_index - in.data_buffer_quantization_index.MaxSize;
+            if (first_data_index < 0)
+            {
+                first_data_index = in.data_buffer_quantization_index.MaxSize + first_data_index;
+            }
+        }
+
+        for (auto i = 0; i < in.data_buffer_quantization_index.MaxSize; i++) {
+            int correct_index = 0;
+            if (in.data_buffer_quantization_index.Offset != 0) {
+                correct_index = first_data_index + i;
+                if (correct_index > in.data_buffer_quantization_index.MaxSize)
+                    correct_index -= in.data_buffer_quantization_index.MaxSize;
+            }
+            else {
+                correct_index = i;
+
+                if (i >= in.data_buffer_quantization_index.Data.size())
+                    break;
+            }
+
+            auto& iter = in.data_buffer_quantization_index.Data[correct_index];
+
+            std::string x_str = std::to_string(iter.x);
+            std::string y_str = "";
+
+            if (data_format == 0) {
+                y_str = std::to_string((int)iter.y);
+            }
+            else if (data_format == 1) {
+                y_str = NumberToHexString(iter.y);
+            }
+            else if (data_format == 2) {
+                y_str = NumberToBitString(iter.y);
+            }
+
+            if (!use_dot) {
+                // Convert the decimal point symbols using the replace function
+                std::replace(x_str.begin(), x_str.end(), original_symbol, desired_symbol);
+
+                if (data_format == 0) {
+                    std::replace(y_str.begin(), y_str.end(), original_symbol, desired_symbol);
+                }
+            }
+
+            // Write the data to the file
+            file << x_str << separator << y_str << "\n";
+        }
+
+        // Close the file
+        file.close();
+    }
+    catch (const std::exception& ex) {
+        printf("Error while saving file: %s", ex.what());
     }
 }
 
@@ -808,6 +994,8 @@ void PlotManager::TickInputData(Signal& input)
         output = sinf(time) > 0.f ? 1.f : -1.f;
         break;
     case PlotManager::function_names::random:
+        input.math_expr = "sin(x) * sin(0.2 * x) + sin(0.5*x) * cos(x^2)";
+        output = ProcessMathExpression(input);
         break;
     case PlotManager::function_names::math_expression:
         output = ProcessMathExpression(input);
