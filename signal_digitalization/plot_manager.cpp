@@ -363,6 +363,7 @@ void PlotManager::RenderTextOutput()
     ImGui::Text("Selected:");
     ImGui::SameLine();
 
+    static int selected_format = 0;
     static std::string selected_string = "None";
     static int selected_index = 0;
     if (inputs.size() <= 0 && selected_index >= 0) {
@@ -429,15 +430,15 @@ void PlotManager::RenderTextOutput()
                     
 
                 auto& iter = in.data_buffer_quantization_index.Data[correct_index];
-                if (digital_data_type == 0) {
+                if (selected_format == 2) {
                     out += " ";
                     out += NumberToBitString(iter.y);
                 }
-                else if (digital_data_type == 1) {
+                else if (selected_format == 1) {
                     out += " ";
                     out += NumberToHexString(iter.y);
                 }
-                else if (digital_data_type == 2) {
+                else if (selected_format == 0) {
                     out += " ";
                     char str[32];
                     sprintf(str, "%0.f", iter.y);
@@ -454,7 +455,6 @@ void PlotManager::RenderTextOutput()
     ImGui::EndChild();
     ImGui::PopStyleColor();
 
-    static int selected_format = 0;
     ImGui::Text("Export data format:");
     ImGui::Combo("##formatexport", &selected_format, "Decimal\0Hexadecimal\0binary\0\0");
     if (ImGui::Button("Export data")) {
