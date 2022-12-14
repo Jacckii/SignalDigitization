@@ -489,20 +489,22 @@ void PlotManager::LoadJsonData(nlohmann::json& data)
     }
 
     // Loop over the json array of settings
-    for (nlohmann::json json_setting : data)
-    {
-        Signal in;
+    if (data.contains("signals")) {
+        for (nlohmann::json json_setting : data["signals"])
+        {
+            Signal in;
 
-        in.input_name = json_setting.value("input_name", in.input_name);
-        in.plot_color.x = json_setting.value("plot_color_x", in.plot_color.x);
-        in.plot_color.y = json_setting.value("plot_color_y", in.plot_color.y);
-        in.plot_color.z = json_setting.value("plot_color_z", in.plot_color.z);
-        in.plot_color.w = json_setting.value("plot_color_w", in.plot_color.w);
-        in.type = (PlotManager::function_names)json_setting.value("type", (int)in.type);
-        in.math_expr = json_setting.value("math_expr", in.math_expr);
-        in.amplitude = json_setting.value("amplitude", in.amplitude);
-        in.noise = json_setting.value("noise", in.noise);
-        inputs.push_back(in);
+            in.input_name = json_setting.value("input_name", in.input_name.c_str());
+            in.plot_color.x = json_setting.value("plot_color_x", in.plot_color.x);
+            in.plot_color.y = json_setting.value("plot_color_y", in.plot_color.y);
+            in.plot_color.z = json_setting.value("plot_color_z", in.plot_color.z);
+            in.plot_color.w = json_setting.value("plot_color_w", in.plot_color.w);
+            in.type = (PlotManager::function_names)json_setting.value("type", (int)in.type);
+            in.math_expr = json_setting.value("math_expr", in.math_expr.c_str());
+            in.amplitude = json_setting.value("amplitude", in.amplitude);
+            in.noise = json_setting.value("noise", in.noise);
+            inputs.push_back(in);
+        }
     }
 
     marker_size = data.value("marker_size", 3.2f);
@@ -539,7 +541,7 @@ nlohmann::json PlotManager::GetJsonData()
         item["math_expr"] = iter.math_expr;
         item["amplitude"] = iter.amplitude;
         item["noise"] = iter.noise;
-        data.push_back(item);
+        data["signals"].push_back(item);
     }
 
     data["marker_size"] = marker_size;
@@ -994,7 +996,7 @@ void PlotManager::TickInputData(Signal& input)
         output = sinf(time) > 0.f ? 1.f : -1.f;
         break;
     case PlotManager::function_names::random:
-        input.math_expr = "sin(x) * sin(0.2 * x) + sin(0.5*x) * cos(x^2)";
+        input.math_expr = "sin(x) + sin(2x) + sin(0.5*x) * cos(x)";
         output = ProcessMathExpression(input);
         break;
     case PlotManager::function_names::math_expression:
