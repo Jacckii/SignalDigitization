@@ -12,6 +12,7 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include "noise_generator.h"
 
 
 PlotManager plot_manager;
@@ -38,6 +39,7 @@ void PlotManager::TickData()
     for (auto& iter : inputs) {
         TickInputData(iter);
         TickOutputData(iter);
+        iter.noise_gen.tick(time);
     }
 }
 
@@ -679,6 +681,7 @@ void PlotManager::RenderEditInputDialog()
                 color[3] = temp.plot_color.w;
 
                 amplitude = temp.amplitude;
+                noise = temp.noise;
             }
 
             ImGui::Text("Select input type:");
@@ -806,16 +809,6 @@ int PlotManager::RenderAnalogInputCard(Signal& input)
     return ret;
 }
 
-float PlotManager::GenerateGussianNoise()
-{
-    // Define random generator with Gaussian distribution
-    const float mean = 0.0f;
-    const float stddev = 0.1f;
-    std::default_random_engine generator;
-    std::normal_distribution<float> dist(mean, stddev);
-    return dist(generator);
-}
-
 float PlotManager::FindClosestQuantValue(float value, float quant_step, int number_of_positions, float min, float max) {
     float closest_value = FLT_MIN;
     float closest_diff = FLT_MAX;
@@ -866,14 +859,15 @@ void PlotManager::TickOutputData(Signal& output)
             auto data_index = (output.data_buffer_analog.Offset - 1) % output.data_buffer_analog.MaxSize;
             last_y_axis_value = output.data_buffer_analog.Data[data_index].y;
         }
+
         //add guassian noise
         if (add_noise)
         {
             bool add_or_decreese = rand() % 2;
             if (add_or_decreese)
-                last_y_axis_value += GenerateGussianNoise() * noise_multiplier;
+                last_y_axis_value += NoiseGenerator::GenerateGussianNoise() * noise_multiplier;
             else
-                last_y_axis_value -= GenerateGussianNoise() * noise_multiplier;
+                last_y_axis_value -= NoiseGenerator::GenerateGussianNoise() * noise_multiplier;
         }
 
         output.data_buffer_sampling.AddPoint(time, last_y_axis_value);
@@ -1011,11 +1005,7 @@ void PlotManager::TickInputData(Signal& input)
     //add noise
     if (input.noise != 0.f)
     {
-        bool add_or_decreese = rand() % 2;
-        if (add_or_decreese)
-            output += GenerateGussianNoise() * input.noise;
-        else
-            output -= GenerateGussianNoise() * input.noise;
+        output += input.noise_gen.GetNoiseData() * input.noise;
     }
 
     input.data_buffer_analog.AddPoint(time, output);

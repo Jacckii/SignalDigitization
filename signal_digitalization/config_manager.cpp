@@ -41,13 +41,13 @@ void ConfigManager::RenderConfigTab()
     
     static char config_name[127] = "";
     ImGui::BeginDisabled(cfg_files.size() == 0 || selected_config >= cfg_files.size());
-    if (ImGui::Button("Save", ImVec2(window_size.x / 4 - 2.5 * ImGui::GetStyle().ItemSpacing.x, 0.f))) {
+    if (ImGui::Button("Save", ImVec2(window_size.x / 4.f - 2.5f * ImGui::GetStyle().ItemSpacing.x, 0.f))) {
         Save(cfg_files[selected_config]);
     }
     ImGui::EndDisabled();
     ImGui::SameLine();
     ImGui::BeginDisabled(cfg_files.size() == 0 || selected_config >= cfg_files.size());
-    if (ImGui::Button("Load", ImVec2(window_size.x / 4 - 2.5 * ImGui::GetStyle().ItemSpacing.x, 0.f))) {
+    if (ImGui::Button("Load", ImVec2(window_size.x / 4.f - 2.5f * ImGui::GetStyle().ItemSpacing.x, 0.f))) {
         Load(cfg_files[selected_config]);
     }
     ImGui::EndDisabled();

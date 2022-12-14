@@ -171,6 +171,7 @@
   <ItemGroup>
     <ClInclude Include="config_manager.h" />
     <ClInclude Include="json.h" />
+    <ClInclude Include="noise_generator.h" />
     <ClInclude Include="structs.h" />
     <ClInclude Include="plot_manager.h" />
   </ItemGroup>

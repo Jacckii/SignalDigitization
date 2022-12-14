@@ -4,6 +4,7 @@
 #include <gui.h>
 #include "structs.h"
 #include "json.h"
+#include "noise_generator.h"
 
 class PlotManager {
 private:
@@ -31,7 +32,8 @@ private:
 		float last_sample_time;
 		ScrollingBuffer data_buffer_quantization;
 		ScrollingBuffer data_buffer_quantization_index;
-		
+		NoiseGenerator noise_gen;
+
 		Signal(std::string name, PlotManager::function_names math_func, 
 			std::string math_expression, ImVec4 color, float amplitude_, float noise_)
 			: input_name(name), type(math_func), math_expr(math_expression), 
@@ -74,7 +76,6 @@ public:
 	void ExportDataToFile(int data_input_index, std::string filePathName, bool use_dot, int data_format);
 
 	//Digital
-	float GenerateGussianNoise();
 	float FindClosestQuantValue(float value, float quant_step, int number_of_positions, float min, float max);
 	int FindClosestQuantIndex(float value, float quant_step, int number_of_positions, float min, float max);
 	void TickOutputData(Signal& output);
