@@ -164,10 +164,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="config_manager.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="plot_manager.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="config_manager.h" />
+    <ClInclude Include="json.h" />
     <ClInclude Include="structs.h" />
     <ClInclude Include="plot_manager.h" />
   </ItemGroup>
