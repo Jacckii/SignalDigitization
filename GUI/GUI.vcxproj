@@ -19,9 +19,12 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="includes\dirent.h" />
     <ClInclude Include="includes\gui.h" />
     <ClInclude Include="includes\imconfig.h" />
     <ClInclude Include="includes\imgui.h" />
+    <ClInclude Include="includes\ImGuiFileDialog.h" />
+    <ClInclude Include="includes\ImGuiFileDialogConfig.h" />
     <ClInclude Include="includes\imgui_impl_dx10.h" />
     <ClInclude Include="includes\imgui_impl_win32.h" />
     <ClInclude Include="includes\imgui_internal.h" />
@@ -34,6 +37,7 @@
   <ItemGroup>
     <ClCompile Include="src\gui.cpp" />
     <ClCompile Include="src\imgui.cpp" />
+    <ClCompile Include="src\ImGuiFileDialog.cpp" />
     <ClCompile Include="src\imgui_demo.cpp" />
     <ClCompile Include="src\imgui_draw.cpp" />
     <ClCompile Include="src\imgui_impl_dx10.cpp" />
