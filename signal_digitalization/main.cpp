@@ -11,6 +11,10 @@
 //  Autor: epezent
 //  Git: https://github.com/epezent/implo
 //  Description: Plot widgets for ImGui
+//ImGuiFileDialog:
+//  Autor: aiekick
+//  Git: https://github.com/aiekick/ImGuiFileDialog
+//  Description: File Dialog for Dear ImGui
 //MagicEnum:
 //  Autor: Neargye
 //  Git: https://github.com/Neargye/magic_enum
@@ -22,7 +26,10 @@
 //  Web: http://www.partow.net/programming/exprtk/
 //  Git: https://github.com/ArashPartow/exprtk
 //  Description: C++ Mathematical Expression Parsing And Evaluation Library
-
+//nlohmann::json:
+//  Autor: nlohmann
+//  Git: https://github.com/nlohmann/json
+//  Description: JSON for Modern C++
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -37,6 +44,7 @@
 #include <chrono>
 #include <imgui_internal.h>
 #include "plot_manager.h"
+#include "config_manager.h"
 
 int main(int argc, char* argv[]) {
     std::unique_ptr<GUI> gui = std::make_unique<GUI>(L"Demonstrace digitalizace signálu", 900, 580);
@@ -74,11 +82,29 @@ int main(int argc, char* argv[]) {
                         plot_manager.RenderMainPlot();
                     }
                     ImGui::EndChild();
+                    plot_manager.TickData();
                     ImGui::BeginChild("Plot settings", ImVec2(0.f, 0.f), true);
                     {
-                        ImGui::Text("Plot settings:");
-                        plot_manager.TickData();
-                        plot_manager.RenderMainPlotSettings();
+                        ImGuiTabBarFlags tab_bar_flags = ImGuiTabBarFlags_None;
+                        if (ImGui::BeginTabBar("Settings tabs", tab_bar_flags))
+                        {
+                            if (ImGui::BeginTabItem("Settings"))
+                            {
+                                plot_manager.RenderMainPlotSettings();
+                                ImGui::EndTabItem();
+                            }
+                            if (ImGui::BeginTabItem("Output##tab"))
+                            {
+                                plot_manager.RenderTextOutput();
+                                ImGui::EndTabItem();
+                            }
+                            if (ImGui::BeginTabItem("Configs"))
+                            {
+                                config_manager.RenderConfigTab();
+                                ImGui::EndTabItem();
+                            }
+                            ImGui::EndTabBar();
+                        }
                     }
                     ImGui::EndChild();
 
