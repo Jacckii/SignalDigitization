@@ -418,12 +418,13 @@ void PlotManager::RenderTextOutput()
                 int correct_index = 0;
                 if (in.data_buffer_quantization_index.Offset != 0) {
                     correct_index = first_data_index + i;
-                    if (correct_index > in.data_buffer_quantization_index.MaxSize)
+                    if (correct_index >= in.data_buffer_quantization_index.MaxSize)
                         correct_index -= in.data_buffer_quantization_index.MaxSize;
                 }
                 else {
                     correct_index = i;
 
+                    //sanity check
                     if (i >= in.data_buffer_quantization_index.Data.size())
                         break;
                 }

@@ -20,7 +20,7 @@ public:
 
 	void tick(float time) {
 		//change dirrection of the noise
-		if (std::abs(target - temp) < 0.1f || time - last_change > 2.f)
+		if (std::abs(target - temp) < 0.05f || time - last_change > 1.f)
 		{
 			target = GenerateGussianNoise() * 5.f;
 			auto rand_ = rand() % 3;
@@ -49,7 +49,7 @@ public:
 	}
 
 private:
-	float temp = 0;
+	float temp = 0.1f;
 	bool going_up = false;
 	float last_change = 0.f;
 	
