@@ -462,6 +462,7 @@ void PlotManager::RenderTextOutput()
 #ifndef __EMSCRIPTEN__
         ImGuiFileDialog::Instance()->OpenModal("Save as##export_output_data", "Save file", ".csv", ".");
 #else
+        //ToDo: use EM_ASM macro to call javascript function from C++ that will invoke download of the file!
 #endif
     }
 

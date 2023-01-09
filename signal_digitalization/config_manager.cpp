@@ -1,3 +1,4 @@
+//ToDo: Add support for saving configs into the browser local storage, add option to download config as .cfg file as well and load them!
 #ifndef __EMSCRIPTEN__
 #include <iostream>
 #include <fstream>
