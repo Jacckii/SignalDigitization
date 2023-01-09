@@ -150,8 +150,6 @@ void ImGui_ImplSdl_RenderDrawLists(ImDrawData* draw_data);
 
 void CleanupSDL()
 {
-	ImGui_ImplSdl_Shutdown();
-
 	if (g_Window)
 	{
 		SDL_DestroyWindow(g_Window);
@@ -346,7 +344,8 @@ void GUI::Init(const wchar_t* windowName, int w, int h) {
 	ImGui::GetIO().FontDefault = defFont;
 #endif
 #ifdef SDL2_GUI
-	ImGui_ImplSdl_Init(g_Window);
+	ImGui_ImplSDL2_InitForOpenGL(g_Window, g_glcontext);
+	ImGui_ImplOpenGL3_Init("#version 100");
 #endif
 }
 
@@ -387,7 +386,7 @@ bool GUI::beginFrame() {
 	SDL_Event event;
 	while (SDL_PollEvent(&event))
 	{
-		ImGui_ImplSdl_ProcessEvent(&event);
+		ImGui_ImplSDL2_ProcessEvent(&event);
 		if (event.type == SDL_QUIT)
 			return false;
 	}
@@ -399,7 +398,8 @@ bool GUI::beginFrame() {
 	ImGui::NewFrame();
 #endif
 #ifdef SDL2_GUI
-	ImGui_ImplSdl_NewFrame(g_Window);
+	ImGui_ImplOpenGL3_NewFrame();
+	ImGui_ImplSDL2_NewFrame(g_Window);
 	ImGui::NewFrame();
 #endif
 
@@ -428,7 +428,7 @@ void GUI::endFrame() {
 	ImGui::Render();
 	glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
 	glClear(GL_COLOR_BUFFER_BIT);
-	ImGui_ImplSdl_RenderDrawLists(ImGui::GetDrawData());
+	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
 	SDL_GL_SwapWindow(g_Window);
 #endif

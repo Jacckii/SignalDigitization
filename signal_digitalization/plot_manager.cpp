@@ -459,7 +459,10 @@ void PlotManager::RenderTextOutput()
     ImGui::Text("Export data format:");
     ImGui::Combo("##formatexport", &selected_format, "Decimal\0Hexadecimal\0binary\0\0");
     if (ImGui::Button("Export data")) {
+#ifndef __EMSCRIPTEN__
         ImGuiFileDialog::Instance()->OpenModal("Save as##export_output_data", "Save file", ".csv", ".");
+#else
+#endif
     }
 
     static bool use_dot = false;
