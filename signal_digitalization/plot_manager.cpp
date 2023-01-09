@@ -14,6 +14,10 @@
 #include <vector>
 #include "noise_generator.h"
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#include <GLES3/gl3.h>
+#endif
 
 PlotManager plot_manager;
 
@@ -45,7 +49,7 @@ void PlotManager::TickData()
 
 void PlotManager::OpenAddInputDialog()
 {
-	ImGui::OpenPopup("Add input");
+    ImGui::OpenPopup("Add input");
 }
 
 void PlotManager::RenderAddInputDialog()
@@ -96,8 +100,8 @@ void PlotManager::RenderAddInputDialog()
 
             PlotManager::Signal temp(
                 std::string(new_name),
-                (PlotManager::function_names)item, 
-                std::string(math_expression), 
+                (PlotManager::function_names)item,
+                std::string(math_expression),
                 ImVec4(color[0], color[1], color[2], color[3]),
                 amplitude, noise);
 
@@ -184,7 +188,7 @@ void PlotManager::RenderMainPlot()
 
                 if (show_digital_data && iter.data_buffer_quantization_index.Data.size() > 0 && iter.data_buffer_quantization.Data.size() > 0) {
                     //render text
-                    auto last_index_value = ImVec2(0,0);
+                    auto last_index_value = ImVec2(0, 0);
                     if (iter.data_buffer_quantization_index.Offset == 0)
                         last_index_value = iter.data_buffer_quantization_index.Data.back();
                     else {
@@ -318,7 +322,7 @@ void PlotManager::RenderDigitalizationOtions()
         ImGui::SliderFloat("##NoiseMultiplier", &noise_multiplier, 0.2f, 5.f, "%.2f");
         ImGui::PopItemWidth();
     }
-    
+
     ImGui::NewLine();
     ImGui::Text("Quantization area:");
     ImGui::InputDouble("Min", &min_quant_value, 0.01, 0.1);
@@ -358,6 +362,22 @@ void PlotManager::RenderMainPlotSettings()
     ImGui::Columns(1);
 }
 
+#ifdef __EMSCRIPTEN__
+EM_JS(void, downloadStringAsFile, (const char* data, int datalen), {
+    // Create a download link
+    var link = document.createElement('a');
+    link.download = 'data';
+    link.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(UTF8ToString(data, datalen));
+
+    // Click on the link to trigger the download
+    link.click();
+    });
+
+static void downloadStringAsFile(std::string data, std::string filename) {
+    downloadStringAsFile(data.c_str(), data.size());
+}
+#endif
+
 void PlotManager::RenderTextOutput()
 {
     ImGui::Text("Selected:");
@@ -392,17 +412,17 @@ void PlotManager::RenderTextOutput()
     }
 
     ImGui::PushStyleColor(ImGuiCol_ChildBg, ImGui::GetStyle().Colors[ImGuiCol_WindowBg]);
-    
-    ImGui::BeginChild("##outputText", 
-        ImVec2(0, ImGui::CalcTextSize("TEST STRING").y + 
-            ImGui::GetStyle().WindowPadding.y * 2 + 
-            ImGui::GetStyle().ScrollbarSize), 
+
+    ImGui::BeginChild("##outputText",
+        ImVec2(0, ImGui::CalcTextSize("TEST STRING").y +
+            ImGui::GetStyle().WindowPadding.y * 2 +
+            ImGui::GetStyle().ScrollbarSize),
         true, ImGuiWindowFlags_HorizontalScrollbar);
     {
         if (selected_index < inputs.size()) {
             auto& in = inputs[selected_index];
             std::string out = "";
- 
+
             int last_data_index = 0;
             int first_data_index = 0;
             if (in.data_buffer_quantization_index.Offset != 0) {
@@ -428,7 +448,7 @@ void PlotManager::RenderTextOutput()
                     if (i >= in.data_buffer_quantization_index.Data.size())
                         break;
                 }
-                    
+
 
                 auto& iter = in.data_buffer_quantization_index.Data[correct_index];
                 if (selected_format == 2) {
@@ -456,17 +476,17 @@ void PlotManager::RenderTextOutput()
     ImGui::EndChild();
     ImGui::PopStyleColor();
 
+    static bool use_dot = false;
     ImGui::Text("Export data format:");
     ImGui::Combo("##formatexport", &selected_format, "Decimal\0Hexadecimal\0binary\0\0");
     if (ImGui::Button("Export data")) {
 #ifndef __EMSCRIPTEN__
         ImGuiFileDialog::Instance()->OpenModal("Save as##export_output_data", "Save file", ".csv", ".");
 #else
-        //ToDo: use EM_ASM macro to call javascript function from C++ that will invoke download of the file!
+        ExportDataToFile(selected_index, "data", use_dot, selected_format);
 #endif
     }
 
-    static bool use_dot = false;
     ImGui::SameLine();
     ImGui::Checkbox("Use dot as decimal place", &use_dot);
 
@@ -478,7 +498,7 @@ void PlotManager::RenderTextOutput()
         {
             std::string filePathName = ImGuiFileDialog::Instance()->GetFilePathName();
             std::string filePath = ImGuiFileDialog::Instance()->GetCurrentPath();
-            
+
             //save data to the file
             ExportDataToFile(selected_index, filePathName, use_dot, selected_format);
         }
@@ -578,13 +598,18 @@ void PlotManager::ExportDataToFile(int data_input_index, std::string filePathNam
         printf("Error while saving file: selected plot was invalid!");
         return;
     }
+    std::string out = "";
     std::string separator = ";";
     char original_symbol = '.';
     char desired_symbol = ',';
 
     try {
+#ifdef __EMSCRIPTEN__
+        std::stringstream file;
+#else
         // Open the file for writing
         std::ofstream file(filePathName);
+#endif
 
         file << "x" << separator << " y" << "\n";
         auto& in = inputs[data_input_index];
@@ -641,8 +666,13 @@ void PlotManager::ExportDataToFile(int data_input_index, std::string filePathNam
             file << x_str << separator << y_str << "\n";
         }
 
+#ifdef __EMSCRIPTEN__
+        out = file.str();
+        downloadStringAsFile(out, filePathName);//filePathName is used as name of the file
+#else
         // Close the file
         file.close();
+#endif
     }
     catch (const std::exception& ex) {
         printf("Error while saving file: %s", ex.what());
@@ -717,14 +747,14 @@ void PlotManager::RenderEditInputDialog()
             }
 
             ImGui::SameLine();
-            
+
             ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.95f, 0.54f, 0.46f, 0.5f));
             ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.95f, 0.54f, 0.46f, 0.6f));
             ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.95f, 0.54f, 0.46f, 0.7f));
             if (ImGui::Button("Delete")) {
                 DeleteInput(edit_input);
                 ImGui::CloseCurrentPopup();
-                
+
                 ImGui::PopStyleColor(3);
                 ImGui::EndPopup();
                 just_opne = true;
@@ -808,7 +838,7 @@ int PlotManager::RenderAnalogInputCard(Signal& input)
         ImGui::Text(input.input_name.c_str());
     }
     ImGui::EndChild();
-    
+
     ImGui::PopStyleVar();
 
     return ret;
@@ -819,7 +849,7 @@ float PlotManager::FindClosestQuantValue(float value, float quant_step, int numb
     float closest_diff = FLT_MAX;
 
     float base = max > min ? min : max;
-    
+
     for (int i = 0; i < number_of_positions; i++) {
         auto pos = base + quant_step * i;
         auto diff = abs(value - pos);
@@ -882,7 +912,7 @@ void PlotManager::TickOutputData(Signal& output)
         float min_max_diff = (float)abs(max_quant_value - min_quant_value);
         if (number_of_positions != 0) {
             float qunat_step = min_max_diff / (float)number_of_positions;
-            
+
             float quantizied_value = FindClosestQuantValue(last_y_axis_value, qunat_step, number_of_positions, (float)min_quant_value, (float)max_quant_value);
             output.data_buffer_quantization.AddPoint(time, quantizied_value);
 

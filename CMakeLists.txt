@@ -15,6 +15,8 @@ endif()
 include_directories(src)
 include_directories(SYSTEM external ${SDL2_INCLUDE_DIRS} ${OPENGL_INCLUDE_DIRS} dependencies/includes GUI/includes)
 
+add_definitions(-w)
+
 add_executable(index
 	GUI/includes/gui.h
 	GUI/includes/gui_conf.h
