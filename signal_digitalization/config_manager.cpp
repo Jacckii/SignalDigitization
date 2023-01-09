@@ -1,3 +1,4 @@
+#ifndef __EMSCRIPTEN__
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -191,3 +192,5 @@ void ConfigManager::Load(const std::string& config_name)
 
     RefreshConfigs();
 }
+
+#endif

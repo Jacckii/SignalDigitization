@@ -9,6 +9,9 @@
 #ifndef DIRENT_H
 #define DIRENT_H
 
+#include "gui_conf.h"
+#ifdef DX10_GUI
+
  /* Hide warnings about unreferenced local functions */
 #if defined(__clang__)
 #   pragma clang diagnostic ignored "-Wunused-function"
@@ -1177,5 +1180,7 @@ extern "C" {
 
 #ifdef __cplusplus
 }
+#endif
+
 #endif
 #endif /*DIRENT_H*/

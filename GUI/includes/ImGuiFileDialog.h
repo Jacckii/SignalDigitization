@@ -581,6 +581,10 @@ ImGuiFontStudio is using also ImGuiFileDialog.
 #ifndef IMGUIFILEDIALOG_H
 #define IMGUIFILEDIALOG_H
 
+#ifdef __EMSCRIPTEN__
+#define USE_STD_FILESYSTEM
+#endif
+
 // compatible with 1.88 WIP
 #define IMGUIFILEDIALOG_VERSION "v0.6.5"
 

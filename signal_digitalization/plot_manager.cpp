@@ -289,13 +289,13 @@ void PlotManager::PlotDataTooltip(const char* name, const float* xs, const float
 
             if (digital_data_type == 0)
             {
-                ImGui::Text("%s: %s", name, NumberToBitString(*(float*)((uintptr_t)value + (DWORD)idx * (DWORD)stride)).c_str());
+                ImGui::Text("%s: %s", name, NumberToBitString(*(float*)((uintptr_t)value + (unsigned long)idx * (unsigned long)stride)).c_str());
             }
             else if (digital_data_type == 1) {
-                ImGui::Text("%s: %s", name, NumberToHexString(*(float*)((uintptr_t)value + (DWORD)idx * (DWORD)stride)).c_str());
+                ImGui::Text("%s: %s", name, NumberToHexString(*(float*)((uintptr_t)value + (unsigned long)idx * (unsigned long)stride)).c_str());
             }
             else if (digital_data_type == 2) {
-                ImGui::Text("%s: %d", name, (int)*(float*)((uintptr_t)value + (DWORD)idx * (DWORD)stride));
+                ImGui::Text("%s: %d", name, (int)*(float*)((uintptr_t)value + (unsigned long)idx * (unsigned long)stride));
             }
             ImGui::EndTooltip();
         }

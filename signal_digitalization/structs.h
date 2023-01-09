@@ -1,7 +1,9 @@
 #pragma once
 #include <gui.h>
 
+#ifndef M_PI
 # define M_PI           3.14159265358979323846  /* pi */
+#endif
 
 // utility structure for realtime plot
 struct ScrollingBuffer {

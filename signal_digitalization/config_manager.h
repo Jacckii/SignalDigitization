@@ -1,3 +1,5 @@
+#pragma once
+#ifndef __EMSCRIPTEN__
 #include <dirent.h>
 #include <string>
 #include <vector>
@@ -27,3 +29,4 @@ private:
 };
 
 extern ConfigManager config_manager;
+#endif

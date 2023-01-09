@@ -1,15 +1,33 @@
 #pragma once
 
+#include "gui_conf.h"
 #include <iostream>
 #include <stdint.h>
-#include <tchar.h>
 #include "imgui.h"
+
+#ifdef WIN32_GUI
 #include "imgui_impl_win32.h"
+#endif
+
+#ifdef WEBASSEMBLY_GUI
+#include "imgui_impl_opengl3.h"
+#endif
+
+#ifdef DX10_GUI
+#include <tchar.h>
 #include "imgui_impl_dx10.h"
 #include <d3d10_1.h>
 #include <d3d10.h>
 #define DIRECTINPUT_VERSION 0x0800
 #include <dinput.h>
+#endif 
+
+#ifdef SDL2_GUI
+#include "imgui_impl_sdl.h"
+#include <sdl2/SDL.h>
+#include <sdl2/SDL_syswm.h>
+#include <sdl2/SDL_opengles2.h>
+#endif
 
 class GUI {
 public:
@@ -19,8 +37,9 @@ public:
 
 	bool beginFrame();
 	void endFrame();
-
+#ifdef DX10_GUI
 	MSG getMsg();
+#endif
 private:
 	void Init(const wchar_t* windowName, int w, int h);
 };
