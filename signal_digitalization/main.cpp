@@ -105,9 +105,7 @@ void main_loop() {
                     }
                     if (ImGui::BeginTabItem("Configs"))
                     {
-#ifndef __EMSCRIPTEN__
                         config_manager.RenderConfigTab();
-#endif
                         ImGui::EndTabItem();
                     }
                     ImGui::EndTabBar();

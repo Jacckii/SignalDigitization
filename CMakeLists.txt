@@ -56,4 +56,9 @@ add_executable(index
 set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LIBRARY "libc++")
 set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LANGUAGE_STANDARD "c++17")
 
+add_definitions("-s EXPORTED_RUNTIME_METHODS='[\"ccall\",\"cwrap\"]'")
+add_definitions("-s EXPORTED_RUNTIME_METHODS='[\"_filePickerCallback\"]'")
+add_definitions("-s EXPORTED_FUNCTIONS='[\"_filePickerCallback\"]'")
+set_target_properties(index PROPERTIES LINK_FLAGS "-s EXPORTED_RUNTIME_METHODS=['ccall','_filePickerCallback']")
+
 target_link_libraries(index ${SDL2_LIBRARIES} ${OPENGL_LIBRARIES}) 

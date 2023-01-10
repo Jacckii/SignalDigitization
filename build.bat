@@ -25,7 +25,7 @@ echo Running emcmake cmake..
 call emcmake cmake ..
 
 echo Running Ninja...
-call ninja
+call ninja -j4
 echo ninja finished
 
 echo Build complete.
