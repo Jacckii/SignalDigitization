@@ -70,8 +70,12 @@ void PlotManager::RenderAddInputDialog()
         static float noise = 0.f;
         ImGui::Text("Select input type:");
         ImGui::ComboV("##input_function", &item, vec_function_names);
+        if (ImGui::IsItemHovered())
+            ImGui::SetTooltip("Select how should we generate the signal");
         ImGui::Text("Input name:");
         ImGui::InputText("##InputNameInput", name, 256);
+        if (ImGui::IsItemHovered())
+            ImGui::SetTooltip("Name of the input signal, you will be able to see this in legend of the plot");
         static float color[4] = { 0.4f, 0.7f, 0.0f, 1.f };
         ImGui::Text("Plot color:");
         ImGui::ColorEdit4("##PlotColor", color);
@@ -79,14 +83,20 @@ void PlotManager::RenderAddInputDialog()
         if (item == PlotManager::function_names::math_expression) {
             ImGui::Text("Math expression:");
             ImGui::InputText("##MathExpressionInput", math_expression, 500);
+            if (ImGui::IsItemHovered())
+                ImGui::SetTooltip("Type here an mathematic expression, you can use variable x to define time. For ex. 'sin(x)'");
         }
         else {
             ImGui::Text("Amplitude:");
             ImGui::SliderFloat("##AmplitudeSlider", &amplitude, 0.01f, 1.f, "%.2f");
+            if (ImGui::IsItemHovered())
+                ImGui::SetTooltip("This allows you to multiply the amplitude of given function");
         }
 
         ImGui::Text("Noise:");
         ImGui::SliderFloat("##noiseAddInput", &noise, 0.00f, 5.f, "%.2f");
+        if (ImGui::IsItemHovered())
+            ImGui::SetTooltip("You can add noise to the signal to make it more realistic");
 
         ImGui::Dummy(ImVec2(300.f, 15.f));
 
@@ -269,7 +279,6 @@ void PlotManager::RenderMainPlot()
     ImPlot::GetStyle() = old_plot_style;
 }
 
-
 template <typename T>
 int BinarySearch(const T* arr, int r, T x, int stride) {
     int best_index = 0;
@@ -287,7 +296,6 @@ int BinarySearch(const T* arr, int r, T x, int stride) {
 
     return best_index;
 }
-
 
 void PlotManager::PlotDataTooltip(const char* name, const float* xs, const float* value, float width_percent, int count, int stride) {
 
@@ -333,11 +341,19 @@ void PlotManager::RenderDigitalizationOtions()
     ImGui::Text("Sampling frequency:");
     ImGui::PushItemWidth(-1.f);
     ImGui::SliderFloat("##SamplingRate", &sampling_rate, 1.f, 20.f, "%.2f");
+    if (ImGui::IsItemHovered())
+        ImGui::SetTooltip("Sampling frequency determins, how many times per give second we should take a sample");
     ImGui::PopItemWidth();
     ImGui::Checkbox("Show sampling", &show_sampling);
+    if (ImGui::IsItemHovered())
+        ImGui::SetTooltip("Render sample points in main plot");
     ImGui::Checkbox("Sync sampling time", &sync_sample_timing);
+    if (ImGui::IsItemHovered())
+        ImGui::SetTooltip("Sync sample timing delta for all inputs");
     ImGui::NewLine();
     ImGui::Checkbox("Add noise", &add_noise);
+    if (ImGui::IsItemHovered())
+        ImGui::SetTooltip("You can add additional noise exclusivly just for the sampled signal");
     if (add_noise) {
         ImGui::Text("Noise multiplier:");
         ImGui::PushItemWidth(-1.f);
@@ -348,18 +364,30 @@ void PlotManager::RenderDigitalizationOtions()
     ImGui::NewLine();
     ImGui::Text("Quantization area:");
     ImGui::InputDouble("Min", &min_quant_value, 0.01, 0.1);
+    if (ImGui::IsItemHovered())
+        ImGui::SetTooltip("This option sets the minimum limit of quantization process");
     ImGui::InputDouble("Max", &max_quant_value, 0.01, 0.1);
+    if (ImGui::IsItemHovered())
+        ImGui::SetTooltip("This option sets the maximum limit of quantization process");
     ImGui::Checkbox("Show quantiz. limits", &show_quant_limits);
+    if (ImGui::IsItemHovered())
+        ImGui::SetTooltip("You can change limits by dragging them on the main plot, or by changing thier decimal value above.");
     ImGui::Checkbox("Show quantiz. levels", &show_quant_levels);
+    if (ImGui::IsItemHovered())
+        ImGui::SetTooltip("Shows each quantization level on main plot");
     ImGui::Text("Quantization bit depth:");
     ImGui::PushItemWidth(-1.f);
     ImGui::SliderInt("##QuantizationBitDepth", &quant_bit_depth, 2, 10);
+    if (ImGui::IsItemHovered())
+        ImGui::SetTooltip("This changes the resolution of the quantization process");
     ImGui::Checkbox("Show quantizied data", &show_quant_data);
     ImGui::NewLine();
     ImGui::Checkbox("Show digital data", &show_digital_data);
     ImGui::Checkbox("Show digital anotation", &show_digital_data_text);
     ImGui::Text("Data type:");
     ImGui::Combo("##digital_data_type", &digital_data_type, "Binary\0Hexadeciaml\0Decimal\0\0");
+    if (ImGui::IsItemHovered())
+        ImGui::SetTooltip("This changes the output format of 'Show digital anotation' option");
 
     ImGui::PopItemWidth();
 }
@@ -368,21 +396,31 @@ void PlotManager::RenderMainPlotSettings()
 {
     ImGui::Columns(2);
     ImGui::Checkbox("Pause!", &paused);
+    if (ImGui::IsItemHovered())
+        ImGui::SetTooltip("This allows you to stop time, and move with X axes freely");
     ImGui::Text("Time scale:");
     ImGui::PushItemWidth(-1.f);
     ImGui::SliderFloat("##TimeScale", &time_scale, 0.1f, 2.f, "%.2f");
+    if (ImGui::IsItemHovered())
+        ImGui::SetTooltip("Allows you to change time scale. Time = real_time * time_scale");
     ImGui::Text("Sample point size:");
     ImGui::SliderFloat("##Samplepointsize", &marker_size, 2.f, 5.f, "%.2f");
     ImGui::PopItemWidth();
     ImGui::NextColumn();
     ImGui::Checkbox("Auto size axes", &auto_size);
+    if (ImGui::IsItemHovered())
+        ImGui::SetTooltip("This option will resize Y axes acordingly to the input");
     ImGui::Text("Show x seconds:");
     ImGui::PushItemWidth(-1.f);
     ImGui::SliderFloat("##ShowXSeconds", &time_ammount, 0.01f, 20.f, "%.2f");
+    if (ImGui::IsItemHovered())
+        ImGui::SetTooltip("This changes how many seoncds are shown on X axes");
     ImGui::PopItemWidth();
     ImGui::Text("Digital plot height:");
     ImGui::PushItemWidth(-1.f);
     ImGui::SliderFloat("##digitalPlotHeight", &DigitalBitHeight, 5.f, 50.f, "%.1f");
+    if (ImGui::IsItemHovered())
+        ImGui::SetTooltip("Hight of invidual digital plot data");
     ImGui::PopItemWidth();
     ImGui::Text("Sample data render style:");
     ImGui::PushItemWidth(-1.f);
@@ -752,22 +790,32 @@ void PlotManager::RenderEditInputDialog()
 
             ImGui::Text("Select input type:");
             ImGui::ComboV("##input_function", &item, vec_function_names);
+            if (ImGui::IsItemHovered())
+                ImGui::SetTooltip("Select how should we generate the signal");
             ImGui::Text("Input name:");
             ImGui::InputText("##InputNameInput", name, 256);
+            if (ImGui::IsItemHovered())
+                ImGui::SetTooltip("Name of the input signal, you will be able to see this in legend of the plot");
             ImGui::Text("Plot color:");
             ImGui::ColorEdit4("##PlotColor", color);
 
             if (item == PlotManager::function_names::math_expression) {
                 ImGui::Text("Math expression:");
                 ImGui::InputText("##MathExpressionInput", math_expression, 500);
+                if (ImGui::IsItemHovered())
+                    ImGui::SetTooltip("Type here an mathematic expression, you can use variable x to define time. For ex. 'sin(x)'");
             }
             else {
                 ImGui::Text("Amplitude:");
                 ImGui::SliderFloat("##AmplitudeSlider", &amplitude, 0.01f, 1.f, "%.2f");
+                if (ImGui::IsItemHovered())
+                    ImGui::SetTooltip("This allows you to multiply the amplitude of given function");
             }
 
             ImGui::Text("Noise:");
             ImGui::SliderFloat("##noiseEditInput", &noise, 0.00f, 5.f, "%.2f");
+            if (ImGui::IsItemHovered())
+                ImGui::SetTooltip("You can add noise to the signal to make it more realistic");
 
             just_opne = false;
             ImGui::Dummy(ImVec2(300.f, 15.f));

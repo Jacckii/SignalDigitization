@@ -72,6 +72,9 @@ void main_loop() {
             if (ImGui::Button("+", ImVec2(-1.f, 0.f))) {
                 plot_manager.OpenAddInputDialog();
             }
+            if (ImGui::IsItemHovered())
+                ImGui::SetTooltip("Add analog signal");
+
             plot_manager.RenderAddInputDialog();
             ImGui::BeginChild("InputCards");
             plot_manager.RenderInputCards();
