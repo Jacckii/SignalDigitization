@@ -32,6 +32,7 @@ private:
 		float last_sample_time;
 		ScrollingBuffer data_buffer_quantization;
 		ScrollingBuffer data_buffer_quantization_index;
+		ScrollingBuffer data_buffer_quantization_binary;
 		NoiseGenerator noise_gen;
 
 		Signal(std::string name, PlotManager::function_names math_func, 
@@ -72,6 +73,7 @@ public:
 	std::vector<std::string> vec_function_names;
 	float marker_size = 3.2f;
 	bool auto_size = true;
+	float DigitalBitHeight = 25.f;
 
 	void ExportDataToFile(int data_input_index, std::string filePathName, bool use_dot, int data_format);
 
@@ -82,10 +84,15 @@ public:
 	float sampling_rate = 1.5f;
 	bool show_sampling = false;
 	bool add_noise = false;
+	bool sync_sample_timing = false;
+	float last_sampled_time_global = 0.f;
 	float noise_multiplier = 1.f;
 	int sample_show_type = 0;
 
 	//quantizace
+	void GenerateQuantiziedValue(Signal& output, float last_y_axis_value, float qunat_step, int number_of_positions);
+	void GenerateQuantiziedIndex(Signal& output, float last_y_axis_value, float qunat_step, int number_of_positions);
+	void GenerateQuantiziedBinary(Signal& output, float time_delta);
 	double max_quant_value = 1.f;
 	double min_quant_value = -1.f;
 	bool show_quant_limits = false;
@@ -95,6 +102,7 @@ public:
 	int quant_show_type = 0;
 
 	bool show_digital_data = false;
+	bool show_digital_data_text = false;
 	int digital_data_type = 0; //bits, hex, decimal
 	std::string NumberToBitString(float number);
 	std::string NumberToHexString(float number);
@@ -108,6 +116,7 @@ public:
 	int edit_input = 0;
 	bool paused = false;
 	float time_scale = 1.f;
+	float time_ammount = 10.f;
 
 	float time = 0.f;
 };

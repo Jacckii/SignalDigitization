@@ -45,6 +45,12 @@ void PlotManager::TickData()
         TickOutputData(iter);
         iter.noise_gen.tick(time);
     }
+
+    auto sampling_rate_in_ms = 1.f / (float)sampling_rate;
+    if (last_sampled_time_global + sampling_rate_in_ms < time) {
+        //sampling
+        last_sampled_time_global = time;
+    }
 }
 
 void PlotManager::OpenAddInputDialog()
@@ -153,14 +159,23 @@ void PlotManager::RenderInputCards()
 
 void PlotManager::RenderMainPlot()
 {
+    static float old_time_ammount = time_ammount;
     auto old_plot_style = ImPlot::GetStyle();
     ImPlot::GetStyle().MarkerSize = marker_size;
+    ImPlot::GetStyle().DigitalBitHeight = DigitalBitHeight;
 
     auto plot_window_height = ImGui::GetCurrentWindow()->Size.y - (ImGui::GetStyle().ItemSpacing.y * 4.f);
     ImGui::BeginChild("Plot view", ImVec2(0.f, (plot_window_height * 0.65f) - (ImGui::GetStyle().ItemSpacing.y * 1.25f)), true);
-    if (ImPlot::BeginPlot("##Digital", ImVec2(-1.f, -1.f), auto_size ? ImPlotFlags_Equal : 0)) {
+    if (ImPlot::BeginPlot("##Digital", ImVec2(-1.f, -1.f), 0)) {
         ImPlot::SetupAxes(0, 0, 0, auto_size ? ImPlotAxisFlags_AutoFit : 0);
-        ImPlot::SetupAxisLimits(ImAxis_X1, time - 10.0, time, ImGuiCond_Always);
+        if (!paused || old_time_ammount != time_ammount) {
+            ImPlot::SetupAxisLimits(ImAxis_X1, time - time_ammount, time, ImGuiCond_Always);
+            old_time_ammount = time_ammount;
+        }
+        else {
+            ImPlot::SetupAxisLimits(ImAxis_X1, time - time_ammount, time, ImGuiCond_Appearing);
+        }
+
         for (auto& iter : inputs) {
             if (iter.data_buffer_analog.Data.size() > 0)
             {
@@ -186,7 +201,7 @@ void PlotManager::RenderMainPlot()
                     }
                 }
 
-                if (show_digital_data && iter.data_buffer_quantization_index.Data.size() > 0 && iter.data_buffer_quantization.Data.size() > 0) {
+                if (show_digital_data && iter.data_buffer_quantization_index.Data.size() > 0 && iter.data_buffer_quantization.Data.size() > 0 && iter.data_buffer_quantization_binary.Data.size() > 0) {
                     //render text
                     auto last_index_value = ImVec2(0, 0);
                     if (iter.data_buffer_quantization_index.Offset == 0)
@@ -204,20 +219,25 @@ void PlotManager::RenderMainPlot()
                         last_value = iter.data_buffer_quantization.Data[data_index];
                     }
 
-                    if (digital_data_type == 0)
-                    {
-                        ImPlot::Annotation(last_index_value.x, last_value.y, ImVec4(1.f, 1.f, 1.f, 0.4f), ImVec2(-5.f, -5.f), true, "%s", NumberToBitString(last_index_value.y).c_str());
-                    }
-                    else if (digital_data_type == 1) {
-                        ImPlot::Annotation(last_index_value.x, last_value.y, ImVec4(1.f, 1.f, 1.f, 0.4f), ImVec2(-5.f, -5.f), true, "%s", NumberToHexString(last_index_value.y).c_str());
-                    }
-                    else if (digital_data_type == 2) {
-                        ImPlot::Annotation(last_index_value.x, last_value.y, ImVec4(1.f, 1.f, 1.f, 0.4f), ImVec2(-5.f, -5.f), true, "%d", (int)last_index_value.y);
+                    if (show_digital_data_text) {
+                        if (digital_data_type == 0)
+                        {
+                            ImPlot::Annotation(last_index_value.x, last_value.y, ImVec4(1.f, 1.f, 1.f, 0.4f), ImVec2(-5.f, -5.f), true, "%s", NumberToBitString(last_index_value.y).c_str());
+                        }
+                        else if (digital_data_type == 1) {
+                            ImPlot::Annotation(last_index_value.x, last_value.y, ImVec4(1.f, 1.f, 1.f, 0.4f), ImVec2(-5.f, -5.f), true, "%s", NumberToHexString(last_index_value.y).c_str());
+                        }
+                        else if (digital_data_type == 2) {
+                            ImPlot::Annotation(last_index_value.x, last_value.y, ImVec4(1.f, 1.f, 1.f, 0.4f), ImVec2(-5.f, -5.f), true, "%d", (int)last_index_value.y);
+                        }
                     }
 
                     //render tooltip
                     auto size = iter.data_buffer_quantization_index.Offset == 0 ? (iter.data_buffer_quantization_index.Data.size()) : (iter.data_buffer_quantization_index.Offset % iter.data_buffer_quantization_index.MaxSize);
                     PlotDataTooltip(iter.input_name.c_str(), &iter.data_buffer_quantization_index.Data[0].x, &iter.data_buffer_quantization_index.Data[0].y, 0.25f, size, 2 * sizeof(float));
+
+                    //render digital binary plot
+                    ImPlot::PlotDigital((iter.input_name + std::string(" digital")).c_str(), &iter.data_buffer_quantization_binary.Data[0].x, &iter.data_buffer_quantization_binary.Data[0].y, iter.data_buffer_quantization_binary.Data.size(), iter.data_buffer_quantization_binary.Offset, 2 * sizeof(float));
                 }
             }
         }
@@ -235,6 +255,7 @@ void PlotManager::RenderMainPlot()
                 }
             }
         }
+
         if (show_quant_limits) {
             ImPlot::DragLineY(draw_line_index++, &min_quant_value, ImVec4(1, 1, 1, 1), 1, ImPlotDragToolFlags_NoFit);
             ImPlot::TagY(min_quant_value, ImVec4(1, 1, 1, 1), "Min");
@@ -309,11 +330,12 @@ void PlotManager::PlotDataTooltip(const char* name, const float* xs, const float
 void PlotManager::RenderDigitalizationOtions()
 {
     ImGui::NewLine();
-    ImGui::Text("Sampling rate:");
+    ImGui::Text("Sampling frequency:");
     ImGui::PushItemWidth(-1.f);
     ImGui::SliderFloat("##SamplingRate", &sampling_rate, 1.f, 20.f, "%.2f");
     ImGui::PopItemWidth();
     ImGui::Checkbox("Show sampling", &show_sampling);
+    ImGui::Checkbox("Sync sampling time", &sync_sample_timing);
     ImGui::NewLine();
     ImGui::Checkbox("Add noise", &add_noise);
     if (add_noise) {
@@ -335,6 +357,7 @@ void PlotManager::RenderDigitalizationOtions()
     ImGui::Checkbox("Show quantizied data", &show_quant_data);
     ImGui::NewLine();
     ImGui::Checkbox("Show digital data", &show_digital_data);
+    ImGui::Checkbox("Show digital anotation", &show_digital_data_text);
     ImGui::Text("Data type:");
     ImGui::Combo("##digital_data_type", &digital_data_type, "Binary\0Hexadeciaml\0Decimal\0\0");
 
@@ -353,6 +376,14 @@ void PlotManager::RenderMainPlotSettings()
     ImGui::PopItemWidth();
     ImGui::NextColumn();
     ImGui::Checkbox("Auto size axes", &auto_size);
+    ImGui::Text("Show x seconds:");
+    ImGui::PushItemWidth(-1.f);
+    ImGui::SliderFloat("##ShowXSeconds", &time_ammount, 0.01f, 20.f, "%.2f");
+    ImGui::PopItemWidth();
+    ImGui::Text("Digital plot height:");
+    ImGui::PushItemWidth(-1.f);
+    ImGui::SliderFloat("##digitalPlotHeight", &DigitalBitHeight, 5.f, 50.f, "%.1f");
+    ImGui::PopItemWidth();
     ImGui::Text("Sample data render style:");
     ImGui::PushItemWidth(-1.f);
     ImGui::Combo("##SampleDataStyle", &sample_show_type, "Scatter\0Stem\0\0");
@@ -880,10 +911,72 @@ int PlotManager::FindClosestQuantIndex(float value, float quant_step, int number
     return closest_index;
 }
 
+void PlotManager::GenerateQuantiziedValue(Signal& output, float last_y_axis_value, float qunat_step, int number_of_positions) {
+    float quantizied_value = FindClosestQuantValue(last_y_axis_value, qunat_step, number_of_positions, (float)min_quant_value, (float)max_quant_value);
+    output.data_buffer_quantization.AddPoint(time, quantizied_value);
+}
+
+void PlotManager::GenerateQuantiziedIndex(Signal& output, float last_y_axis_value, float qunat_step, int number_of_positions) {
+    int quant_index = FindClosestQuantIndex(last_y_axis_value, qunat_step, number_of_positions, (float)min_quant_value, (float)max_quant_value);
+    output.data_buffer_quantization_index.AddPoint(time, (float)quant_index);
+}
+
+void PlotManager::GenerateQuantiziedBinary(Signal& output, float time_delta) {
+    auto decimal_to_binary = [](int decimal_value, int num_bits) {
+        std::vector<bool> binary(num_bits);
+
+        for (int i = 0; i < num_bits; i++) {
+            binary[num_bits - 1 - i] = (decimal_value >> i) & 1;
+        }
+
+        return binary;
+    };
+    //we are generating value for previous tick only, so if there is not any, we can't do this!
+    if (output.data_buffer_quantization_index.Data.size() <= 0)
+        return;
+
+    //get last index value
+    auto last_index_value = ImVec2(0, 0);
+    if (output.data_buffer_quantization_index.Offset == 0)
+        last_index_value = output.data_buffer_quantization_index.Data.back();
+    else {
+        auto data_index = (output.data_buffer_quantization_index.Offset - 1) % output.data_buffer_quantization_index.MaxSize;
+        last_index_value = output.data_buffer_quantization_index.Data[data_index];
+    }
+
+    //convert index value to array of 1 and 0
+    auto binary = decimal_to_binary((int)last_index_value.y, quant_bit_depth);
+
+    //generate x ticks for each bit depth of the quantizier
+    auto bit_tick_size_ms = time_delta / quant_bit_depth;
+    for (int o = 0; o < quant_bit_depth && o < binary.size(); o++)
+    {
+        //get correct time of tick
+        auto binary_data_time = time - time_delta + (bit_tick_size_ms * o);
+
+        int value = (int)binary[o];
+
+        //this will mark for us starting position of each invidual binuar number
+        if (o == 0) {   
+            if (value == 1)
+                value = 2;
+            else if (value == 0)
+                value = -1;
+        }
+
+        output.data_buffer_quantization_binary.AddPoint(binary_data_time, (float)value);
+    }
+}
+
 void PlotManager::TickOutputData(Signal& output)
 {
+    auto last_sampletime = output.last_sample_time;
+    if (sync_sample_timing)
+        last_sampletime = last_sampled_time_global;
+
     auto sampling_rate_in_ms = 1.f / (float)sampling_rate;
-    if (output.last_sample_time + sampling_rate_in_ms < time) {
+    if (last_sampletime + sampling_rate_in_ms < time) {
+        auto time_delta = time - output.last_sample_time;
         //sampling
         output.last_sample_time = time;
         //get last valid analog value
@@ -905,6 +998,7 @@ void PlotManager::TickOutputData(Signal& output)
                 last_y_axis_value -= NoiseGenerator::GenerateGussianNoise() * noise_multiplier;
         }
 
+        //sampled analog data
         output.data_buffer_sampling.AddPoint(time, last_y_axis_value);
 
         //quantization
@@ -913,11 +1007,12 @@ void PlotManager::TickOutputData(Signal& output)
         if (number_of_positions != 0) {
             float qunat_step = min_max_diff / (float)number_of_positions;
 
-            float quantizied_value = FindClosestQuantValue(last_y_axis_value, qunat_step, number_of_positions, (float)min_quant_value, (float)max_quant_value);
-            output.data_buffer_quantization.AddPoint(time, quantizied_value);
+            GenerateQuantiziedValue(output, last_y_axis_value, qunat_step, number_of_positions);
 
-            int quant_index = FindClosestQuantIndex(last_y_axis_value, qunat_step, number_of_positions, (float)min_quant_value, (float)max_quant_value);
-            output.data_buffer_quantization_index.AddPoint(time, (float)quant_index);
+            //generate binary data for previous tick first!!
+            GenerateQuantiziedBinary(output, time_delta);
+
+            GenerateQuantiziedIndex(output, last_y_axis_value, qunat_step, number_of_positions);
         };
     }
 }

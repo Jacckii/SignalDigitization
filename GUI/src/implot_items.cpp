@@ -2299,7 +2299,9 @@ IMPLOT_INLINE void PlotDigitalEx(const char* label_id, Getter getter) {
                 }
                 if (ImNanOrInf(itemData2.y)) itemData2.y = ImConstrainNan(ImConstrainInf(itemData2.y));
                 int pixY_0 = (int)(s.LineWeight);
+                bool starting_point = (itemData1.y > 1) || (itemData1.y < 0);
                 itemData1.y = ImMax(0.0, itemData1.y);
+                itemData1.y = ImMin(1.0, itemData1.y);
                 float pixY_1_float = s.DigitalBitHeight * (float)itemData1.y;
                 int pixY_1 = (int)(pixY_1_float); //allow only positive values
                 int pixY_chPosOffset = (int)(ImMax(s.DigitalBitHeight, pixY_1_float) + s.DigitalBitGap);
@@ -2310,10 +2312,13 @@ IMPLOT_INLINE void PlotDigitalEx(const char* label_id, Getter getter) {
                 pMin.y = (y_axis.PixelMin) + ((-gp.DigitalPlotOffset)                   - pixY_Offset);
                 pMax.y = (y_axis.PixelMin) + ((-gp.DigitalPlotOffset) - pixY_0 - pixY_1 - pixY_Offset);
                 //plot only one rectangle for same digital state
-                while (((i+2) < getter.Count) && (itemData1.y == itemData2.y)) {
+                std::vector<float> ticks_x;
+                while (((i+2) < getter.Count) && (itemData1.y == itemData2.y)) { 
                     const int in = (i + 1);
                     itemData2 = getter(in);
                     if (ImNanOrInf(itemData2.y)) break;
+
+                    ticks_x.push_back(pMax.x);
                     pMax.x = PlotToPixels(itemData2,IMPLOT_AUTO,IMPLOT_AUTO).x;
                     i++;
                 }
@@ -2323,11 +2328,18 @@ IMPLOT_INLINE void PlotDigitalEx(const char* label_id, Getter getter) {
                 if (pMin.x > x_axis.PixelMax) pMin.x = x_axis.PixelMax;
                 if (pMax.x > x_axis.PixelMax) pMax.x = x_axis.PixelMax;
                 //plot a rectangle that extends up to x2 with y1 height
-                if ((pMax.x > pMin.x) && (gp.CurrentPlot->PlotRect.Contains(pMin) || gp.CurrentPlot->PlotRect.Contains(pMax))) {
+                if ((pMax.x > pMin.x) && (gp.CurrentPlot->PlotRect.Contains(ImVec2(pMin.x,pMax.y)))) {
                     // ImVec4 colAlpha = item->Color;
                     // colAlpha.w = item->Highlight ? 1.0f : 0.9f;
-                    DrawList.AddRectFilled(pMin, pMax, ImGui::GetColorU32(s.Colors[ImPlotCol_Fill]));
+                    DrawList.AddRectFilled(pMin, pMax, ImGui::GetColorU32(s.Colors[ImPlotCol_Line]));
                 }
+
+                DrawList.AddLine(pMin, ImVec2(pMin.x, pMin.y - s.DigitalBitHeight * (starting_point ? 1 : 0.5)), IM_COL32_WHITE, 1.f);
+
+                for (const auto& it : ticks_x) {
+                    DrawList.AddLine(ImVec2(it, pMin.y), ImVec2(it, pMin.y - s.DigitalBitHeight * 0.5), IM_COL32_WHITE, 1.f);
+                }
+
                 itemData1 = itemData2;
             }
             gp.DigitalPlotItemCnt++;
