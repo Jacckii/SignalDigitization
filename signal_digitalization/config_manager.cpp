@@ -303,7 +303,6 @@ extern "C" {
     EMSCRIPTEN_KEEPALIVE
         void filePickerCallback(const char* fileContents) {
         std::string fileContentsString(fileContents);
-        printf("%s \n", fileContentsString.c_str());
         config_manager.temp_import_data = fileContentsString;
         config_manager.open_import_dialog = true;
     }
@@ -320,15 +319,9 @@ void ConfigManager::Import()
         fileInput.type = 'file';
         fileInput.accept = '.cfg';  // Only allow the user to select .cfg files
         fileInput.onchange = function() {
-            console.log("On change\n");
             const file = fileInput.files[0];
             const reader = new FileReader();
             reader.onload = function() {
-                console.log(reader.result);
-                console.log("On load\n");
-                console.log(Module.ccall);
-                console.log(Module.filePickerCallback);
-                console.log(Module._filePickerCallback);
                 // Call the filePickerCallback function with the contents of the file.
                 Module.ccall('filePickerCallback', null, ['string'], [reader.result]);
             };
