@@ -621,6 +621,10 @@ void PlotManager::LoadJsonData(nlohmann::json& data)
     digital_data_type = data.value("digital_data_type", 0);
     paused = data.value("paused", false);
     time_scale = data.value("time_scale", 1.f);
+    DigitalBitHeight = data.value("DigitalBitHeight", 25.f);
+    sync_sample_timing = data.value("sync_sample_timing", false);
+    show_digital_data_text = data.value("show_digital_data_text", false);
+    time_ammount = data.value("time_ammount", 10.f);
 }
 
 nlohmann::json PlotManager::GetJsonData()
@@ -658,6 +662,10 @@ nlohmann::json PlotManager::GetJsonData()
     data["digital_data_type"] = digital_data_type;
     data["paused"] = paused;
     data["time_scale"] = time_scale;
+    data["DigitalBitHeight"] = DigitalBitHeight;
+    data["sync_sample_timing"] = sync_sample_timing;
+    data["show_digital_data_text"] = show_digital_data_text;
+    data["time_ammount"] = time_ammount;
 
     return data;
 }
