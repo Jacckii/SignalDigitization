@@ -42,6 +42,7 @@ Features:
  - Show quantization limits
  - Quantization bit prcession
  - GUI & plot customizations
+ - Github workflows action script that builds and deploys code
 
 ## How to build:
 
