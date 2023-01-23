@@ -1,0 +1,28 @@
+name: Build and Deploy Webassembly version
+on: [push, workflow_dispatch]
+jobs:
+  build-and-deploy:
+    concurrency: ci-${{ github.ref }} 
+    runs-on: windows-2022
+    steps:
+      - name: Checkout 🛎️
+        uses: actions/checkout@v3
+        
+      - name: Setup Emscripten toolchain
+        uses: mymindstorm/setup-emsdk@ab889da2abbcbb280f91ec4c215d3bb4f3a8f775 # point to v12
+        with:
+          # Version to install
+          version: latest # optional, default is latest
+          
+      - name: Configure CMake
+        run: cmake -B ${{github.workspace}}/build_webasm -DCMAKE_TOOLCHAIN_FILE=$EMSDK/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake
+
+      - name: Build
+        # Build your program with the given configuration
+        run: cmake --build ${{github.workspace}}/build_webasm
+        
+      - name: Deploy 🚀
+        uses: JamesIves/github-pages-deploy-action@v4.2.5
+        with:
+          branch: gh-pages # The branch the action should deploy to.
+          folder: docs # The folder the action should deploy.
