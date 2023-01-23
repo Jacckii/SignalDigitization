@@ -14,8 +14,11 @@ jobs:
           # Version to install
           version: 3.1.29
           
+      - name: Verify
+        run: emcc -v
+          
       - name: Configure CMake
-        run: cmake -B ${{github.workspace}}/build_webasm -DCMAKE_TOOLCHAIN_FILE=$EMSDK/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake
+        run: cmake -G "Visual Studio 16 2019" -A x64 -B ${{github.workspace}}/build_webasm -DCMAKE_TOOLCHAIN_FILE=$EMSDK/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake
 
       - name: Build
         # Build your program with the given configuration
