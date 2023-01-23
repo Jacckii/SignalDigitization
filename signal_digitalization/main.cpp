@@ -30,6 +30,11 @@
 //  Autor: nlohmann
 //  Git: https://github.com/nlohmann/json
 //  Description: JSON for Modern C++
+//EMSCRIPTEN
+//  Autor: Alon Zakai
+//  Git: https://github.com/emscripten-core/emscripten
+//  Description: Emscripten compiles C and C++ to WebAssembly using LLVM and Binaryen. 
+//               Emscripten output can run on the Web, in Node.js, and in wasm runtimes.
 
 #include <stdio.h>
 #include <stdlib.h>
