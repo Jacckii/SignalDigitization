@@ -21,8 +21,7 @@ jobs:
         uses: seanmiddleditch/gha-setup-ninja@master
         
       - name: Build
-        # Build your program with the given configuration
-        run: emcmake -G ninja --build ${{github.workspace}}/build_webasm
+        run: ./build.bat
         
       - name: Deploy 🚀
         uses: JamesIves/github-pages-deploy-action@v4.2.5
