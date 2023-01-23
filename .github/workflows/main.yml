@@ -9,10 +9,10 @@ jobs:
         uses: actions/checkout@v3
         
       - name: Setup Emscripten toolchain
-        uses: mymindstorm/setup-emsdk@ab889da2abbcbb280f91ec4c215d3bb4f3a8f775 # point to v12
+        uses: mymindstorm/setup-emsdk@v11
         with:
           # Version to install
-          version: latest # optional, default is latest
+          version: 3.1.29
           
       - name: Configure CMake
         run: cmake -B ${{github.workspace}}/build_webasm -DCMAKE_TOOLCHAIN_FILE=$EMSDK/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake
