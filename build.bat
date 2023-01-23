@@ -22,7 +22,7 @@ if not exist web mkdir web
 cd web
 
 echo Running emcmake cmake..
-call emcmake cmake .. -G ninja
+call emcmake cmake .. -G Ninja
 
 echo Running Ninja...
 call ninja -j4
