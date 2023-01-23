@@ -17,12 +17,12 @@ jobs:
       - name: Verify
         run: emcc -v
           
-      - name: Configure CMake
-        run: emcmake -B ${{github.workspace}}/build_webasm
-
+      - name: Setup Nija
+        uses: seanmiddleditch/gha-setup-ninja@master
+        
       - name: Build
         # Build your program with the given configuration
-        run: emcmake --build ${{github.workspace}}/build_webasm
+        run: emcmake -G ninja --build ${{github.workspace}}/build_webasm
         
       - name: Deploy 🚀
         uses: JamesIves/github-pages-deploy-action@v4.2.5
