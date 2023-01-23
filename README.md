@@ -1,8 +1,9 @@
 # Signal digitalization thesis
 This is part of my theis on demonstration of analog signal digitalization.   
-Supports Web Assembly & Windows builds.
-  
+Supports Web Assembly & Windows builds.  
 C++ 20 standards
+
+![preview](preview.jpg)
 
 Windows version dependencies:
  - DirectX 10
