@@ -1,9 +1,9 @@
-# Signal digitalization thesis
-This is part of my theis on demonstration of analog signal digitalization.   
+# Signal Digitization thesis
+This is part of my thesis on demonstration of analog signal digitization.   
 Supports Web Assembly & Windows builds.  
-[Live demo](https://jacckii.github.io/SignalDigitalization/)
+[Live demo](https://jacckii.github.io/SignalDigitization/)
 
-[![preview](preview.jpg)](https://jacckii.github.io/SignalDigitalization/)
+[![preview](preview.jpg)](https://jacckii.github.io/SignalDigitization/)
 
 Windows version dependencies:
  - DirectX 10
@@ -29,8 +29,8 @@ Features:
  - Add multiple sources of "analog" signal
  - Input mathematic expression as input source
  - Render plots with real time generated data
- - Show sampling step of digitalization
- - Show quantization step of digitalization
+ - Show sampling step of digitization
+ - Show quantization step of digitization
  - Show digital data in main plot
  - Show digital data as string
  - export digital data into .csv file
@@ -54,27 +54,33 @@ This version will output .exe application for x64 platforms
 You will need Windows DirectX 10 SDK
 
 ```
-git clone https://github.com/Jacckii/SignalDigitalization
+git clone https://github.com/Jacckii/SignalDigitization
 ```
 open signal_digitalization.sln in Visual studio 2019 and newver  
 Build GUI library first!  
-Then build App application.  
+Then build the App application.  
 Output should be in `\signal_digitalization\x64\Release\App.exe`
 
 
 ### Web assembly:
 This will compile an Web assembly that can be run in browser platform independent, but these install steps are made for windows!
-It should be possible to compile it on other platforms as well, for that see documentation of Emenscripten and Ninja
+It should be possible to compile it on other platforms as well. For that see the documentation of Emscripten and Ninja
 
-Install Emenscripten and follow install instruction from DOCs: https://emscripten.org/docs/getting_started/downloads.html  
-Make sure Emenscripten is in your `%PATH%`  
+Install Emscripten and follow install instruction from DOCs: https://emscripten.org/docs/getting_started/downloads.html  
+Make sure Emscripten is in your `%PATH%`  
 
 Install Ninja https://ninja-build.org/  
-you can download pre-build Ninja https://github.com/ninja-build/ninja/releases/  
+you can download pre-built Ninja https://github.com/ninja-build/ninja/releases/  
 then put your Ninja.exe into `C:\Ninja\` or somewhere else, and add that path to `%PATH%`  
 
-now you can run `build.bat` if you're running Windows.   
-Or you can follow these steps to do it manually:
+If you're running Windows you can run
+```
+build.bat
+``` 
+
+the output will go in folder `web/build`
+
+Alternatively, you can follow these steps to do it manually:
 
 ```
 mkdir web
@@ -85,5 +91,10 @@ ninja -j4
 This will output 2 files 
 `index.js` and `index.wasm`  
 
-now all you need is to coppy those 2 files and `index.html` that can be found in root directory of this repo on some web server with apache or nginx.
+Now, all you need is to copy those 2 files and `index.html` that can be found in the root directory of this repo to some web server with Apache or Nginx.
 
+### Web assembly using GitHub workflow actions and GitHub pages:
+All you need is to:
+1. Fork this repo
+2. run the Build and deploy action pre-configured in this repo
+3. Configure GitHub Pages if they're not pre-configured already, or copy output of the gh-pages branch and upload it on Apache or Nginx server.
