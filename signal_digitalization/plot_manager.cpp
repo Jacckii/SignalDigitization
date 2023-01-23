@@ -1044,7 +1044,7 @@ void PlotManager::TickOutputData(Signal& output)
             last_y_axis_value = output.data_buffer_analog.Data[data_index].y;
         }
 
-        //add guassian noise
+        //add gaussian noise
         if (add_noise)
         {
             bool add_or_decreese = rand() % 2;

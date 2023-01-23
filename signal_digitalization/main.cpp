@@ -9,7 +9,7 @@
 //  Description: GUI Framework
 //ImPlot:
 //  Autor: epezent
-//  Git: https://github.com/epezent/implo
+//  Git: https://github.com/epezent/implot
 //  Description: Plot widgets for ImGui
 //ImGuiFileDialog:
 //  Autor: aiekick
