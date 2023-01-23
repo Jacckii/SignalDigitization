@@ -30,4 +30,9 @@ echo ninja finished
 
 echo Build complete.
 
+mkdir build
 cd ..
+cp index.html ./web/build
+cp ./web/index.js ./web/build
+cp ./web/index.wasm ./web/build
+echo Build coppied to web/build
