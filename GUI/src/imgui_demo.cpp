@@ -5958,7 +5958,13 @@ void ImGui::ShowAboutWindow(bool* p_open)
         ImGuiIO& io = ImGui::GetIO();
         ImGuiStyle& style = ImGui::GetStyle();
 
+#ifdef __EMSCRIPTEN__
+        ImGui::BeginDisabled();
+#endif
         bool copy_to_clipboard = ImGui::Button("Copy to clipboard");
+#ifdef __EMSCRIPTEN__
+        ImGui::EndDisabled();
+#endif
         ImVec2 child_size = ImVec2(0, ImGui::GetTextLineHeightWithSpacing() * 18);
         ImGui::BeginChildFrame(ImGui::GetID("cfg_infos"), child_size, ImGuiWindowFlags_NoMove);
         if (copy_to_clipboard)

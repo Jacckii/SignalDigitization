@@ -87,14 +87,18 @@ static void ShowAboutWindow(bool* p_open)
         ImGuiIO& io = ImGui::GetIO();
         ImGuiStyle& style = ImGui::GetStyle();
 
+#ifndef __EMSCRIPTEN__
         bool copy_to_clipboard = ImGui::Button("Copy to clipboard");
+#endif
         ImVec2 child_size = ImVec2(0, ImGui::GetTextLineHeightWithSpacing() * 18);
         ImGui::BeginChildFrame(ImGui::GetID("license"), child_size, ImGuiWindowFlags_NoMove);
+#ifndef __EMSCRIPTEN__
         if (copy_to_clipboard)
         {
             ImGui::LogToClipboard();
             ImGui::LogText("```\n"); // Back quotes will make text appears without formatting when pasting on GitHub
         }
+#endif
 
         ImGui::TextWrapped("MIT License\r\n");
         ImGui::NewLine();
@@ -106,11 +110,13 @@ static void ShowAboutWindow(bool* p_open)
         ImGui::NewLine();
         ImGui::TextWrapped(R"(THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.)");
 
+#ifndef __EMSCRIPTEN__
         if (copy_to_clipboard)
         {
             ImGui::LogText("\n```\n");
             ImGui::LogFinish();
         }
+#endif
         ImGui::EndChildFrame();
     }
     ImGui::End();
