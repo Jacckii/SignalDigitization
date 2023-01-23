@@ -335,7 +335,7 @@ void PlotManager::PlotDataTooltip(const char* name, const float* xs, const float
     }
 }
 
-void PlotManager::RenderDigitalizationOtions()
+void PlotManager::RenderDigitizationOtions()
 {
     ImGui::NewLine();
     ImGui::Text("Sampling frequency:");

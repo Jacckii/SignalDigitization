@@ -73,7 +73,7 @@ static void ShowAboutWindow(bool* p_open)
         ImGui::SetNextWindowSize(ImVec2(700.f, show_config_info ? 450.f : 200.f));
         show_config_info_old = show_config_info;
     }
-    if (!ImGui::Begin("About Signal digitalization application", p_open))
+    if (!ImGui::Begin("About Signal digitization application", p_open))
     {
         ImGui::End();
         return;
@@ -82,7 +82,7 @@ static void ShowAboutWindow(bool* p_open)
     ImGui::Text("Coded by Filip Nejedly at UTB.");    
     ImGui::Text("This project is licensed under the MIT license!");
 
-    ImGui::Checkbox("Show licence", &show_config_info);
+    ImGui::Checkbox("Show license", &show_config_info);
     if (show_config_info) {
         ImGuiIO& io = ImGui::GetIO();
         ImGuiStyle& style = ImGui::GetStyle();
@@ -228,9 +228,9 @@ void main_loop() {
             {
                 ImGui::SetColumnWidth(2, window_width * 0.20f);
                 ImGui::BeginChild("DA settings", ImVec2(0.f, 0.f), true);
-                ImGui::Text("Digitalization settings:");
+                ImGui::Text("Digitization settings:");
 
-                plot_manager.RenderDigitalizationOtions();
+                plot_manager.RenderDigitizationOtions();
 
                 ImGui::EndChild();
             }
@@ -242,7 +242,7 @@ void main_loop() {
 
 int main(int argc, char* argv[]) {
     gui.reset();
-    gui = std::make_unique<GUI>(L"Demonstrace digitalizace signalu", 900, 580);
+    gui = std::make_unique<GUI>(L"Demonstration of signal digitization", 900, 580);
 
 #ifdef __EMSCRIPTEN__
     emscripten_set_main_loop(main_loop, 0, 1);

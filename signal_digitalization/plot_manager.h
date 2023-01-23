@@ -57,7 +57,7 @@ public:
 	void RenderAddInputDialog();
 	void RenderInputCards();
 	void RenderMainPlot();
-	void RenderDigitalizationOtions();
+	void RenderDigitizationOtions();
 	void RenderMainPlotSettings();
 	void RenderTextOutput();
 
