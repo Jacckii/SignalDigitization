@@ -40,6 +40,7 @@ add_executable(index
 	GUI/src/imgui_impl_sdl.cpp
 	GUI/src/imgui_tables.cpp
 	GUI/src/imgui_widgets.cpp
+	GUI/src/imgui_demo.cpp
 	GUI/src/ImGuiFileDialog.cpp
 	GUI/src/implot.cpp
 	GUI/src/implot_items.cpp
