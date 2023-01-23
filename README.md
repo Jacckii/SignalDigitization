@@ -22,6 +22,9 @@ Libraries used:
  - nlohmann::json - https://github.com/nlohmann/json
  - Emscripten - https://github.com/emscripten-core/emscripten
 
+ImGui and ImPlot libraries were slightly modified for this application.  
+Please be aware that if you include any other version of these libraries, this app won't work the same!
+
 Features:
  - Add multiple sources of "analog" signal
  - Input mathematic expression as input source
