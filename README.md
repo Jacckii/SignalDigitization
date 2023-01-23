@@ -82,7 +82,7 @@ emcmake cmake ..
 ninja -j4
 ```
 This will output 2 files 
-`index.js` and 'index.wasm'  
+`index.js` and `index.wasm`  
 
 now all you need is to coppy those 2 files and `index.html` that can be found in root directory of this repo on some web server with apache or nginx.
 
