@@ -18,11 +18,11 @@ jobs:
         run: emcc -v
           
       - name: Configure CMake
-        run: cmake -G Ninja -A x64 -B ${{github.workspace}}/build_webasm -DCMAKE_TOOLCHAIN_FILE=$EMSDK/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake
+        run: emcmake -B ${{github.workspace}}/build_webasm
 
       - name: Build
         # Build your program with the given configuration
-        run: cmake --build ${{github.workspace}}/build_webasm
+        run: emcmake --build ${{github.workspace}}/build_webasm
         
       - name: Deploy 🚀
         uses: JamesIves/github-pages-deploy-action@v4.2.5
