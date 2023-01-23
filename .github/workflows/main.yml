@@ -38,6 +38,7 @@ jobs:
       uses: actions/download-artifact@v2
       with:
         name: web_build
+        path: web/build
     - name: Install rsync
       run: sudo apt-get install rsync
     - name: Deploy 🚀
