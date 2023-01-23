@@ -247,7 +247,7 @@ void PlotManager::RenderMainPlot()
                     PlotDataTooltip(iter.input_name.c_str(), &iter.data_buffer_quantization_index.Data[0].x, &iter.data_buffer_quantization_index.Data[0].y, 0.25f, size, 2 * sizeof(float));
 
                     //render digital binary plot
-                    ImPlot::PlotDigital((iter.input_name + std::string(" digital")).c_str(), &iter.data_buffer_quantization_binary.Data[0].x, &iter.data_buffer_quantization_binary.Data[0].y, iter.data_buffer_quantization_binary.Data.size(), iter.data_buffer_quantization_binary.Offset, 2 * sizeof(float));
+                    ImPlot::PlotDigital((iter.input_name + std::string(" digital")).c_str(), &iter.data_buffer_quantization_binary.Data[0].x, &iter.data_buffer_quantization_binary.Data[0].y, iter.data_buffer_quantization_binary.Data.size(), iter.data_buffer_quantization_binary.Offset, 2 * sizeof(float), show_digital_data_text);
                 }
             }
         }

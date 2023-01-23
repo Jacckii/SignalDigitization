@@ -2279,7 +2279,7 @@ template IMPLOT_API double PlotHistogram2D<double>(const char* label_id, const d
 // TODO: Make this behave like all the other plot types (.e. not fixed in y axis)
 
 template <typename Getter>
-IMPLOT_INLINE void PlotDigitalEx(const char* label_id, Getter getter) {
+IMPLOT_INLINE void PlotDigitalEx(const char* label_id, Getter getter, bool show_text_value = false) {
     if (BeginItem(label_id, ImPlotCol_Fill)) {
         ImPlotContext& gp = *GImPlot;
         ImDrawList& DrawList = *GetPlotDrawList();
@@ -2334,10 +2334,23 @@ IMPLOT_INLINE void PlotDigitalEx(const char* label_id, Getter getter) {
                     DrawList.AddRectFilled(pMin, pMax, ImGui::GetColorU32(s.Colors[ImPlotCol_Line]));
                 }
 
-                DrawList.AddLine(pMin, ImVec2(pMin.x, pMin.y - s.DigitalBitHeight * (starting_point ? 1 : 0.5)), IM_COL32_WHITE, 1.f);
+                DrawList.AddLine(pMin, ImVec2(pMin.x, pMin.y - s.DigitalBitHeight * (starting_point ? 1 : 0.5)), IM_COL32_WHITE, starting_point ? 1.5f : 1.f);
 
                 for (const auto& it : ticks_x) {
                     DrawList.AddLine(ImVec2(it, pMin.y), ImVec2(it, pMin.y - s.DigitalBitHeight * 0.5), IM_COL32_WHITE, 1.f);
+                }
+
+                if ((pMax.x > pMin.x) && (gp.CurrentPlot->PlotRect.Contains(ImVec2(pMin.x, pMax.y)))) {
+                    if (show_text_value)
+                    {
+                        std::string val_text = std::to_string((int)itemData1.y);
+                        auto text_size = ImGui::CalcTextSize(val_text.c_str());
+                        auto center = pMin - ImVec2(0, s.DigitalBitHeight / 2.f)
+                                           + ImVec2(((pMax.x - pMin.x) / 2.f), 0.f) 
+                                           - (text_size / 2.f);
+                        if ((pMax.x - pMin.x) > text_size.x)
+                            DrawList.AddText(center, IM_COL32_WHITE, val_text.c_str());
+                    }
                 }
 
                 itemData1 = itemData2;
@@ -2351,21 +2364,21 @@ IMPLOT_INLINE void PlotDigitalEx(const char* label_id, Getter getter) {
 
 
 template <typename T>
-void PlotDigital(const char* label_id, const T* xs, const T* ys, int count, int offset, int stride) {
+void PlotDigital(const char* label_id, const T* xs, const T* ys, int count, int offset, int stride, bool show_value_text) {
     GetterXY<GetterIdx<T>,GetterIdx<T>> getter(GetterIdx<T>(xs,count,offset,stride),GetterIdx<T>(ys,count,offset,stride),count);
-    return PlotDigitalEx(label_id, getter);
+    return PlotDigitalEx(label_id, getter, show_value_text);
 }
 
-template IMPLOT_API void PlotDigital<ImS8>(const char* label_id, const ImS8* xs, const ImS8* ys, int count, int offset, int stride);
-template IMPLOT_API void PlotDigital<ImU8>(const char* label_id, const ImU8* xs, const ImU8* ys, int count, int offset, int stride);
-template IMPLOT_API void PlotDigital<ImS16>(const char* label_id, const ImS16* xs, const ImS16* ys, int count, int offset, int stride);
-template IMPLOT_API void PlotDigital<ImU16>(const char* label_id, const ImU16* xs, const ImU16* ys, int count, int offset, int stride);
-template IMPLOT_API void PlotDigital<ImS32>(const char* label_id, const ImS32* xs, const ImS32* ys, int count, int offset, int stride);
-template IMPLOT_API void PlotDigital<ImU32>(const char* label_id, const ImU32* xs, const ImU32* ys, int count, int offset, int stride);
-template IMPLOT_API void PlotDigital<ImS64>(const char* label_id, const ImS64* xs, const ImS64* ys, int count, int offset, int stride);
-template IMPLOT_API void PlotDigital<ImU64>(const char* label_id, const ImU64* xs, const ImU64* ys, int count, int offset, int stride);
-template IMPLOT_API void PlotDigital<float>(const char* label_id, const float* xs, const float* ys, int count, int offset, int stride);
-template IMPLOT_API void PlotDigital<double>(const char* label_id, const double* xs, const double* ys, int count, int offset, int stride);
+template IMPLOT_API void PlotDigital<ImS8>(const char* label_id, const ImS8* xs, const ImS8* ys, int count, int offset, int stride, bool show_value_text);
+template IMPLOT_API void PlotDigital<ImU8>(const char* label_id, const ImU8* xs, const ImU8* ys, int count, int offset, int stride, bool show_value_text);
+template IMPLOT_API void PlotDigital<ImS16>(const char* label_id, const ImS16* xs, const ImS16* ys, int count, int offset, int stride, bool show_value_text);
+template IMPLOT_API void PlotDigital<ImU16>(const char* label_id, const ImU16* xs, const ImU16* ys, int count, int offset, int stride, bool show_value_text);
+template IMPLOT_API void PlotDigital<ImS32>(const char* label_id, const ImS32* xs, const ImS32* ys, int count, int offset, int stride, bool show_value_text);
+template IMPLOT_API void PlotDigital<ImU32>(const char* label_id, const ImU32* xs, const ImU32* ys, int count, int offset, int stride, bool show_value_text);
+template IMPLOT_API void PlotDigital<ImS64>(const char* label_id, const ImS64* xs, const ImS64* ys, int count, int offset, int stride, bool show_value_text);
+template IMPLOT_API void PlotDigital<ImU64>(const char* label_id, const ImU64* xs, const ImU64* ys, int count, int offset, int stride, bool show_value_text);
+template IMPLOT_API void PlotDigital<float>(const char* label_id, const float* xs, const float* ys, int count, int offset, int stride, bool show_value_text);
+template IMPLOT_API void PlotDigital<double>(const char* label_id, const double* xs, const double* ys, int count, int offset, int stride, bool show_value_text);
 
 // custom
 void PlotDigitalG(const char* label_id, ImPlotGetter getter_func, void* data, int count) {
