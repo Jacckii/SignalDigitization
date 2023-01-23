@@ -51,8 +51,8 @@ You will need Windows DirectX 10 SDK
 
 ```
 git clone https://github.com/Jacckii/SignalDigitalization
-open signal_digitalization.sln in Visual studio 2019 and newver
 ```
+open signal_digitalization.sln in Visual studio 2019 and newver  
 Build GUI library first!  
 Then build App application.  
 Output should be in `\signal_digitalization\x64\Release\App.exe`
