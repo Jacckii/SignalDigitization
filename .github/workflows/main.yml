@@ -1,7 +1,7 @@
 name: Build and Deploy Webassembly version
 on: [push, workflow_dispatch]
 jobs:
-  build-and-deploy:
+  build:
     concurrency: ci-${{ github.ref }} 
     runs-on: windows-2022
     steps:
@@ -29,6 +29,7 @@ jobs:
           name: web_build
           path: web/build
   deploy:
+    needs: build
     concurrency: ci-${{ github.ref }} 
     runs-on: ubuntu-latest
     steps:
